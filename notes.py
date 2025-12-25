@@ -1346,9 +1346,9 @@ echo 3. Configuring Git...
 if not exist .git (
     git init
     git branch -M main
-    git remote add origin https://github.com/inpicture/inpicture.cloud.git
+    git remote add origin https://github.com/inpicture/notes.git
 ) else (
-    git remote set-url origin https://github.com/inpicture/inpicture.cloud.git
+    git remote set-url origin https://github.com/inpicture/notes.git
 )
 
 echo 4. Staging & Committing...
@@ -1363,7 +1363,7 @@ git push -u origin main --force
 echo.
 echo ---------------------------------------------------
 echo SUCCESS!
-echo Check your site: https://inpicture.cloud
+echo Check your site: https://github.com/inpicture/notes
 echo (Updates may take 1-2 minutes to appear)
 echo ---------------------------------------------------
 pause
