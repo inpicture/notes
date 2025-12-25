@@ -1,52 +1,42 @@
 
 @echo off
 echo ---------------------------------------------------
-echo Preparing for GitHub Pages...
+echo UPDATING GITHUB PAGES
 echo ---------------------------------------------------
+echo.
+echo IMPORTANT: Did you run 'notes.py' to generate the new HTML?
+echo If not, close this and run the Python script first!
+echo.
+timeout /t 2
 
-:: Copy index.html to root so GitHub Pages finds it easily
-copy "public\index.html" "index.html" >nul
+echo 1. Copying latest HTML...
+copy /Y "public\index.html" "index.html"
 
-:: Create CNAME for custom domain
+echo 2. Setting CNAME...
 echo inpicture.cloud>CNAME
 
-:: Initialize Git if not already done
+echo 3. Configuring Git...
 if not exist .git (
     git init
     git branch -M main
     git remote add origin https://github.com/inpicture/inpicture.cloud.git
 ) else (
-    :: Ensure remote is correct
     git remote set-url origin https://github.com/inpicture/inpicture.cloud.git
 )
 
-:: Add and Commit
+echo 4. Staging & Committing...
+git config user.email "auto@leafnotes.app"
+git config user.name "Leaf Notes Auto"
 git add .
-git commit -m "Update Leaf Notes Site"
+git commit -m "Update Site %date% %time%"
 
-:: Push
-echo Pushing to GitHub...
+echo 5. Pushing...
 git push -u origin main --force
 
 echo.
 echo ---------------------------------------------------
 echo SUCCESS!
-echo Now enable Pages in Settings:
-echo https://github.com/inpicture/inpicture.cloud/settings/pages
-echo Select 'main' branch and '/ (root)' folder.
-echo ---------------------------------------------------
-echo.
-echo !!! HTTPS FIX (THE "KICK") !!!
-echo If DNS is correct but HTTPS says "Unavailable":
-echo 1. Go to GitHub Pages Settings.
-echo 2. Click "Remove" next to Custom Domain (or delete text and Save).
-echo 3. Wait 2 minutes.
-echo 4. Type "inpicture.cloud" back in and Save.
-echo    (This forces GitHub to re-check DNS and issue the certificate)
-echo ---------------------------------------------------
-echo.
-echo !!! STILL HAVING ISSUES? !!!
-echo Try linking to Cloudflare (Best for HTTPS).
-echo Run 'setup_cloudflare.cmd' for instructions.
+echo Check your site: https://inpicture.cloud
+echo (Updates may take 1-2 minutes to appear)
 echo ---------------------------------------------------
 pause
