@@ -44,4 +44,9 @@ echo 3. Wait 2 minutes.
 echo 4. Type "inpicture.cloud" back in and Save.
 echo    (This forces GitHub to re-check DNS and issue the certificate)
 echo ---------------------------------------------------
+echo.
+echo !!! STILL HAVING ISSUES? !!!
+echo Try linking to Cloudflare (Best for HTTPS).
+echo Run 'setup_cloudflare.cmd' for instructions.
+echo ---------------------------------------------------
 pause

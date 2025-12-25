@@ -468,7 +468,7 @@ html_content = r"""<!DOCTYPE html>
             // UI: Local Viewport State (Open/Closed, Window Position) - NOT SYNCED
             const [localUi, setLocalUi] = useState({});
 
-            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.inpicturecorporation.workers.dev");
+            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const wsRef = useRef(null);
 
@@ -976,18 +976,21 @@ html_content = r"""<!DOCTYPE html>
                     <div className="absolute top-0 left-0 w-full flex justify-center pt-8 z-[5000] pointer-events-none ui-layer">
                         <div className="flex flex-col items-center gap-5 pointer-events-auto">
                             <div className="relative group w-80">
-                                <div className="absolute inset-y-0 left-4 flex items-center text-slate-400"><IconSearch /></div>
-                                <input type="text" placeholder="Search city..." className="glass-panel text-slate-700 placeholder-slate-400 pl-11 pr-6 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg" value={search} onChange={handleSearchChange} />
+                                <input type="text" placeholder="Search" className="glass-panel !bg-white/60 backdrop-blur-xl text-slate-700 placeholder-slate-500 pl-6 pr-11 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg" value={search} onChange={handleSearchChange} />
+                                <div className="absolute inset-y-0 right-4 flex items-center text-slate-500"><IconSearch /></div>
                                 {searchSuggestions.length > 0 && (
                                     <div className="suggestions-list">
                                         {searchSuggestions.map(city => (<div key={city} className="suggestion-item" onClick={() => selectCitySearch(city)}>{city}</div>))}
                                     </div>
                                 )}
                             </div>
-                            <div className="glass-panel rounded-full p-1.5 flex gap-1">
-                                <button onClick={() => setView('HOME')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'HOME' ? 'toggle-active' : 'toggle-inactive'}`}><IconGrid /> Canvas</button>
-                                <button onClick={() => setView('GLOBE')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'GLOBE' ? 'toggle-active' : 'toggle-inactive'}`}><IconGlobe /> Globe</button>
-                            </div>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[5000] pointer-events-auto">
+                        <div className="glass-panel rounded-full p-1.5 flex gap-1 shadow-2xl">
+                            <button onClick={() => setView('HOME')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'HOME' ? 'toggle-active' : 'toggle-inactive'}`}><IconGrid /> Home</button>
+                            <button onClick={() => setView('GLOBE')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'GLOBE' ? 'toggle-active' : 'toggle-inactive'}`}><IconGlobe /> Public</button>
                         </div>
                     </div>
 
@@ -1368,6 +1371,11 @@ echo 3. Wait 2 minutes.
 echo 4. Type "inpicture.cloud" back in and Save.
 echo    (This forces GitHub to re-check DNS and issue the certificate)
 echo ---------------------------------------------------
+echo.
+echo !!! STILL HAVING ISSUES? !!!
+echo Try linking to Cloudflare (Best for HTTPS).
+echo Run 'setup_cloudflare.cmd' for instructions.
+echo ---------------------------------------------------
 pause
 """
 
@@ -1400,6 +1408,36 @@ echo ---------------------------------------------------
 pause
 """
 
+cloudflare_cmd = r"""
+@echo off
+echo ---------------------------------------------------
+echo CLOUDFLARE MIGRATION ASSISTANT
+echo ---------------------------------------------------
+echo.
+echo [STEP 1] Create Cloudflare Account
+echo    Go to https://dash.cloudflare.com/sign-up
+echo.
+echo [STEP 2] Add Site
+echo    Click "Add a Site" -> Enter "inpicture.cloud" -> Select "Free" plan.
+echo.
+echo [STEP 3] Update Nameservers (Hostinger)
+echo    1. Copy the 2 nameservers Cloudflare gives you.
+echo    2. Go to Hostinger -> Domains -> inpicture.cloud -> DNS / Nameservers.
+echo    3. Change Nameservers to "Custom" and paste the Cloudflare ones.
+echo.
+echo [STEP 4] Configure Cloudflare DNS
+echo    1. In Cloudflare, go to DNS -> Records.
+echo    2. DELETE all existing A/AAAA/CNAME records for root (@) and www.
+echo    3. Add Record: Type=CNAME | Name=@   | Target=inpicture.github.io | Proxy=On
+echo    4. Add Record: Type=CNAME | Name=www | Target=inpicture.github.io | Proxy=On
+echo.
+echo [STEP 5] SSL Mode
+echo    Go to SSL/TLS -> Set to "Full".
+echo.
+echo ---------------------------------------------------
+pause
+"""
+
 # Execute Creation
 create_file(os.path.join(base_path, "public", "index.html"), html_content)
 create_file(os.path.join(base_path, "src", "worker.js"), worker_code)
@@ -1407,6 +1445,7 @@ create_file(os.path.join(base_path, "wrangler.toml"), wrangler_toml_content)
 create_file(os.path.join(base_path, "deploy.cmd"), deploy_cmd)
 create_file(os.path.join(base_path, "publish_github.cmd"), github_cmd)
 create_file(os.path.join(base_path, "setup_dns.cmd"), dns_cmd)
+create_file(os.path.join(base_path, "setup_cloudflare.cmd"), cloudflare_cmd)
 
 print("----------------------------------------------------------------")
 print("COMPLETE: Updated UI with Smooth Animation & Global Notes Logic.")

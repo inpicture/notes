@@ -454,7 +454,7 @@
             // UI: Local Viewport State (Open/Closed, Window Position) - NOT SYNCED
             const [localUi, setLocalUi] = useState({});
 
-            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.inpicturecorporation.workers.dev");
+            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const wsRef = useRef(null);
 
@@ -962,18 +962,21 @@
                     <div className="absolute top-0 left-0 w-full flex justify-center pt-8 z-[5000] pointer-events-none ui-layer">
                         <div className="flex flex-col items-center gap-5 pointer-events-auto">
                             <div className="relative group w-80">
-                                <div className="absolute inset-y-0 left-4 flex items-center text-slate-400"><IconSearch /></div>
-                                <input type="text" placeholder="Search city..." className="glass-panel text-slate-700 placeholder-slate-400 pl-11 pr-6 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg" value={search} onChange={handleSearchChange} />
+                                <input type="text" placeholder="Search" className="glass-panel !bg-white/60 backdrop-blur-xl text-slate-700 placeholder-slate-500 pl-6 pr-11 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg" value={search} onChange={handleSearchChange} />
+                                <div className="absolute inset-y-0 right-4 flex items-center text-slate-500"><IconSearch /></div>
                                 {searchSuggestions.length > 0 && (
                                     <div className="suggestions-list">
                                         {searchSuggestions.map(city => (<div key={city} className="suggestion-item" onClick={() => selectCitySearch(city)}>{city}</div>))}
                                     </div>
                                 )}
                             </div>
-                            <div className="glass-panel rounded-full p-1.5 flex gap-1">
-                                <button onClick={() => setView('HOME')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'HOME' ? 'toggle-active' : 'toggle-inactive'}`}><IconGrid /> Canvas</button>
-                                <button onClick={() => setView('GLOBE')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'GLOBE' ? 'toggle-active' : 'toggle-inactive'}`}><IconGlobe /> Globe</button>
-                            </div>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[5000] pointer-events-auto">
+                        <div className="glass-panel rounded-full p-1.5 flex gap-1 shadow-2xl">
+                            <button onClick={() => setView('HOME')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'HOME' ? 'toggle-active' : 'toggle-inactive'}`}><IconGrid /> Home</button>
+                            <button onClick={() => setView('GLOBE')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'GLOBE' ? 'toggle-active' : 'toggle-inactive'}`}><IconGlobe /> Public</button>
                         </div>
                     </div>
 
