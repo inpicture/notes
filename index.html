@@ -34,11 +34,12 @@
         
         /* Dark Mode Map - Animated Gradient */
         @keyframes globeGradient {
-            0% { filter: sepia(100%) hue-rotate(90deg) saturate(600%) contrast(1.2) brightness(1.2); }   /* Green */
-            25% { filter: sepia(100%) hue-rotate(130deg) saturate(600%) contrast(1.2) brightness(1.3); }  /* Light Green */
-            50% { filter: sepia(100%) hue-rotate(170deg) saturate(600%) contrast(1.2) brightness(1.3); }  /* Cyan */
-            75% { filter: sepia(100%) hue-rotate(200deg) saturate(600%) contrast(1.2) brightness(1.3); }  /* Light Blue */
-            100% { filter: sepia(100%) hue-rotate(90deg) saturate(600%) contrast(1.2) brightness(1.2); }
+            0% { filter: sepia(100%) hue-rotate(0deg) saturate(500%) contrast(1.2) brightness(1.2); }
+            20% { filter: sepia(100%) hue-rotate(72deg) saturate(500%) contrast(1.2) brightness(1.2); }
+            40% { filter: sepia(100%) hue-rotate(144deg) saturate(500%) contrast(1.2) brightness(1.2); }
+            60% { filter: sepia(100%) hue-rotate(216deg) saturate(500%) contrast(1.2) brightness(1.2); }
+            80% { filter: sepia(100%) hue-rotate(288deg) saturate(500%) contrast(1.2) brightness(1.2); }
+            100% { filter: sepia(100%) hue-rotate(360deg) saturate(500%) contrast(1.2) brightness(1.2); }
         }
         body.dark .leaflet-layer { animation: globeGradient 20s infinite ease-in-out; }
         body.dark .toggle-active { background: #262626; color: #10b981; }
@@ -187,6 +188,7 @@
         const App = () => {
             const [view, setView] = useState('HOME');
             const [notification, setNotification] = useState(null);
+            const [selectedNote, setSelectedNote] = useState(null);
             const notifTimeout = useRef(null);
             const [notifications, setNotifications] = useState([]);
             const [pendingFocus, setPendingFocus] = useState(null);
@@ -331,7 +333,7 @@
                     if (note) {
                         if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
                         mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
-                        // No longer opening windows, just flying
+                        setSelectedNote(note);
                     }
                     setPendingFocus(null);
                 }
@@ -342,6 +344,7 @@
                 if (!note) return;
                 if (!readNotes.includes(id)) setReadNotes(prev => [...prev, id]);
                 setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+                
                 if (view !== 'GLOBE') {
                     setPendingFocus(id);
                     setView('GLOBE');
@@ -349,6 +352,7 @@
                     if (mapRef.current) {
                         mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
                     }
+                    setSelectedNote(note);
                 }
             };
 
@@ -451,6 +455,7 @@
                             marker.on('click', () => {
                                 if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
                                 map.flyTo([note.lat, note.lng], Math.max(map.getZoom(), 8), { duration: 2.2, easeLinearity: 0.2 });
+                                setSelectedNote(note);
                             });
                             markersRef.current[note.id] = marker;
                         }
@@ -787,44 +792,6 @@
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* FEED LIST */}
-                                <div className="flex flex-col gap-4">
-                                    {visibleNotes.map(note => (
-                                        <div key={note.id} className="note-card p-5 rounded-2xl flex flex-col gap-3">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="avatar">{note.authorAvatar || "👤"}</div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{note.authorName}</span>
-                                                        <span className="text-[10px] text-slate-400">{note.locationName}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button onClick={() => toggleLikeNote(note.id)} className={`flex items-center gap-1 text-xs font-bold transition-colors ${likedNotes.includes(note.id) ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'}`}>
-                                                        <IconHeart size={14} fill={likedNotes.includes(note.id)} />
-                                                        {note.likes || 0}
-                                                    </button>
-                                                    {note.ownerId === userId && (
-                                                        <button onClick={() => deleteNote(note.id)} className="text-slate-300 hover:text-rose-500"><IconTrash size={14}/></button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{__html: note.content}} />
-                                            
-                                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                                                <span className="text-[10px] text-slate-400">{new Date(note.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                                <button onClick={() => toggleSaveNote(note.id)} className={`text-slate-400 hover:text-emerald-500 ${userAccount && userAccount.saved && userAccount.saved.includes(note.id) ? 'text-emerald-500' : ''}`}>
-                                                    <IconBookmark size={16} fill={userAccount && userAccount.saved && userAccount.saved.includes(note.id)} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {visibleNotes.length === 0 && (
-                                        <div className="text-center py-10 text-slate-400 text-sm">No notes yet. Be the first!</div>
-                                    )}
-                                </div>
                             </div>
                         </div>
                     )}
@@ -862,6 +829,37 @@
                             <button onClick={() => setView('GLOBE')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'GLOBE' ? 'toggle-active' : 'toggle-inactive'}`}><IconGlobe /> Public</button>
                         </div>
                     </div>
+
+                    {selectedNote && (
+                        <div className="absolute inset-0 z-[6000] bg-black/30 backdrop-blur-sm flex items-center justify-center pointer-events-auto" onClick={() => setSelectedNote(null)}>
+                            <div className="glass-panel p-6 rounded-2xl w-80 animate-pop-in shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setSelectedNote(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"><IconX /></button>
+                                
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="avatar">{selectedNote.authorAvatar || "👤"}</div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedNote.authorName}</span>
+                                        <span className="text-xs text-slate-500">{selectedNote.locationName}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 max-h-60 overflow-y-auto" dangerouslySetInnerHTML={{__html: selectedNote.content}} />
+                                
+                                <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+                                    <span className="text-xs text-slate-400">{new Date(selectedNote.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => toggleLikeNote(selectedNote.id)} className={`flex items-center gap-1 text-xs font-bold transition-colors ${likedNotes.includes(selectedNote.id) ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'}`}>
+                                            <IconHeart size={16} fill={likedNotes.includes(selectedNote.id)} />
+                                            {selectedNote.likes || 0}
+                                        </button>
+                                        <button onClick={() => toggleSaveNote(selectedNote.id)} className={`text-slate-400 hover:text-emerald-500 ${userAccount && userAccount.saved && userAccount.saved.includes(selectedNote.id) ? 'text-emerald-500' : ''}`}>
+                                            <IconBookmark size={16} fill={userAccount && userAccount.saved && userAccount.saved.includes(selectedNote.id)} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {showAuth && (
                         <div className="absolute inset-0 z-[10000000] bg-black/40 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
