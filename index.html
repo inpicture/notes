@@ -173,12 +173,37 @@
         const IconBookmark = ({ size=20, fill=false }) => <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>;
 
         const CITIES = {
+            // Countries
+            "Germany": [51.1657, 10.4515], "France": [46.2276, 2.2137], "United States": [37.0902, -95.7129],
+            "United Kingdom": [55.3781, -3.4360], "Italy": [41.8719, 12.5674], "Spain": [40.4637, -3.7492],
+            "Greece": [39.0742, 21.8243], "Japan": [36.2048, 138.2529], "China": [35.8617, 104.1954],
+            "India": [20.5937, 78.9629], "Brazil": [-14.2350, -51.9253], "Australia": [-25.2744, 133.7751],
+            "Canada": [56.1304, -106.3468], "Russia": [61.5240, 105.3188], "Egypt": [26.8206, 30.8025],
+            "South Korea": [35.9078, 127.7669], "Turkey": [38.9637, 35.2433], "Mexico": [23.6345, -102.5528],
+            "Indonesia": [-0.7893, 113.9213], "Netherlands": [52.1326, 5.2913], "Switzerland": [46.8182, 8.2275],
+            "Sweden": [60.1282, 18.6435], "Poland": [51.9194, 19.1451], "Argentina": [-38.4161, -63.6167],
+            
+            // Major Cities
             "Athens, Greece": [37.9838, 23.7275], "Thessaloniki, Greece": [40.6401, 22.9444],
             "Cairo, Egypt": [30.0444, 31.2357], "London, UK": [51.5074, -0.1278],
             "Paris, France": [48.8566, 2.3522], "Rome, Italy": [41.9028, 12.4964],
             "New York, USA": [40.7128, -74.0060], "Tokyo, Japan": [35.6762, 139.6503],
             "Sydney, Australia": [-33.8688, 151.2093], "Rio de Janeiro, Brazil": [-22.9068, -43.1729],
-            "Dubai, UAE": [25.2048, 55.2708], "Singapore": [1.3521, 103.8198]
+            "Dubai, UAE": [25.2048, 55.2708], "Singapore": [1.3521, 103.8198],
+            "Berlin, Germany": [52.5200, 13.4050], "Munich, Germany": [48.1351, 11.5820],
+            "Hamburg, Germany": [53.5511, 9.9937], "Frankfurt, Germany": [50.1109, 8.6821],
+            "Madrid, Spain": [40.4168, -3.7038], "Barcelona, Spain": [41.3851, 2.1734],
+            "Moscow, Russia": [55.7558, 37.6173], "Beijing, China": [39.9042, 116.4074],
+            "Shanghai, China": [31.2304, 121.4737], "Los Angeles, USA": [34.0522, -118.2437],
+            "Chicago, USA": [41.8781, -87.6298], "San Francisco, USA": [37.7749, -122.4194],
+            "Miami, USA": [25.7617, -80.1918], "Toronto, Canada": [43.6532, -79.3832],
+            "Vancouver, Canada": [49.2827, -123.1207], "Istanbul, Turkey": [41.0082, 28.9784],
+            "Mumbai, India": [19.0760, 72.8777], "Delhi, India": [28.7041, 77.1025],
+            "Seoul, South Korea": [37.5665, 126.9780], "Mexico City, Mexico": [19.4326, -99.1332],
+            "Jakarta, Indonesia": [-6.2088, 106.8456], "Bangkok, Thailand": [13.7563, 100.5018],
+            "Buenos Aires, Argentina": [-34.6037, -58.3816], "Amsterdam, Netherlands": [52.3676, 4.9041],
+            "Zurich, Switzerland": [47.3769, 8.5417], "Stockholm, Sweden": [59.3293, 18.0686],
+            "Warsaw, Poland": [52.2297, 21.0122], "Vienna, Austria": [48.2082, 16.3738]
         };
 
         const HEADER_HEIGHT = 130;
