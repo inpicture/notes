@@ -578,6 +578,35 @@
                                 showNotification("One new note");
                                 setNotifications(prev => [{ id: msg.note.id, time: Date.now(), read: false }, ...prev]);
                                 flashNotifications();
+                
+                let reconnectTimer;
+                const connect = () => {
+                    if (wsRef.current) wsRef.current.close();
+                    try {
+                        const ws = new WebSocket(cloudUrl);
+                        ws.onopen = () => setIsCloudConnected(true);
+                        ws.onclose = () => { setIsCloudConnected(false); reconnectTimer = setTimeout(connect, 3000); };
+                        ws.onmessage = (event) => {
+                            const msg = JSON.parse(event.data);
+                            if (msg.type === 'SYNC_ALL') {
+                                setNotes(msg.notes);
+                            } else if (msg.type === 'CREATE') {
+                                setNotes(prev => [...prev, msg.note]);
+                                if (msg.note.published && msg.note.ownerId !== userId) {
+                                    showNotification("One new note");
+                                    setNotifications(prev => [{ id: msg.note.id, time: Date.now(), read: false }, ...prev]);
+                                    flashNotifications();
+                                }
+                            } else if (msg.type === 'UPDATE') {
+                                // Only update data, ignore UI fields if they arrive
+                                setNotes(prev => prev.map(n => n.id === msg.id ? { ...n, ...msg.updates } : n));
+                                if (msg.updates.published) {
+                                    showNotification("One new note");
+                                    setNotifications(prev => [{ id: msg.id, time: Date.now(), read: false }, ...prev]);
+                                    flashNotifications();
+                                }
+                            } else if (msg.type === 'DELETE') {
+                                setNotes(prev => prev.filter(n => n.id !== msg.id));
                             }
                         } else if (msg.type === 'UPDATE') {
                             // Only update data, ignore UI fields if they arrive
@@ -596,6 +625,12 @@
                     console.error("WS Error", e);
                 }
                 return () => { if (wsRef.current) wsRef.current.close(); };
+                        };
+                        wsRef.current = ws;
+                    } catch (e) { console.error("WS Error", e); reconnectTimer = setTimeout(connect, 3000); }
+                };
+                connect();
+                return () => { if (wsRef.current) wsRef.current.close(); if (reconnectTimer) clearTimeout(reconnectTimer); };
             }, [cloudUrl]);
 
             useEffect(() => {
@@ -636,6 +671,7 @@
                 if (view === 'HOME') {
                     // In HOME, only show MY notes
                     filtered = notes.filter(n => n.ownerId === userId);
+                    filtered = notes.filter(n => n.ownerId === userId || (userAccount && n.authorEmail === userAccount.email));
                 } else {
                     // GLOBE: Show published notes that haven't fallen
                     // AND are less than 30 days old (extended for visibility)
@@ -786,6 +822,7 @@
                     lat: finalLat, lng: finalLng, locationName: locName,
                     authorName: userAccount ? userAccount.name : "Anonymous",
                     authorAvatar: userAccount ? userAccount.avatar : "👤",
+                    authorEmail: userAccount ? userAccount.email : null,
                     history: [],
                     published: false, reports: 0, likes: 0
                 };
@@ -1245,6 +1282,7 @@
                             <NoteWindow 
                                 note={note} viewMode={view} canvasOffset={canvasOffset}
                                 isOwner={note.ownerId === userId}
+                                isOwner={note.ownerId === userId || (userAccount && note.authorEmail === userAccount.email)}
                                 onMinimize={(id) => updateNote(id, { minimized: true })}
                                 onDelete={deleteNote} onUpdate={updateNote}
                                 onFocus={() => bringToFront(note.id)}
