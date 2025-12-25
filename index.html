@@ -809,8 +809,11 @@
                         const data = await res.json();
                         if (data.success) {
                             setShowVerification(true);
-                            // DEMO: Show code in notification because we can't send real emails
-                            showNotification(`Code sent! (Demo: ${data.debug_code})`); 
+                            if (data.email_sent) {
+                                showNotification("Code sent to your email!");
+                            } else {
+                                showNotification(`Code: ${data.debug_code} (Email not configured)`);
+                            }
                         } else {
                             showNotification(data.error || "Signup failed");
                         }
