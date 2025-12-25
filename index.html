@@ -121,7 +121,7 @@
         .notification-toast {
             position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
             background: #0f172a; color: white; padding: 10px 20px; border-radius: 30px;
-            font-size: 13px; font-weight: 500; z-index: 10000000; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            font-size: 13px; font-weight: 500; z-index: 99999999; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); pointer-events: none;
         }
         @keyframes slideDown { from { transform: translate(-50%, -40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -279,8 +279,6 @@
             const [zoomLevel, setZoomLevel] = useState(5);
             const [showAuth, setShowAuth] = useState(false);
             const [authMode, setAuthMode] = useState('LOGIN'); // LOGIN or SIGNUP
-            const [showVerification, setShowVerification] = useState(false);
-            const [verificationCode, setVerificationCode] = useState("");
             const [viewProfile, setViewProfile] = useState(null); // { name, avatar, id, isMe }
             const [profileTab, setProfileTab] = useState('NOTES'); // NOTES or SAVED
             const [isEditingName, setIsEditingName] = useState(false);
@@ -785,35 +783,15 @@
                 const httpUrl = cloudUrl.replace('wss://', 'https://');
                 
                 try {
-                    if (showVerification) {
-                        // VERIFY CODE
-                        const res = await fetch(`${httpUrl}/auth/verify`, {
-                            method: 'POST', body: JSON.stringify({ email: authInput.email, code: verificationCode })
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            setUserAccount(data.user);
-                            setShowAuth(false);
-                            setShowVerification(false);
-                            setVerificationCode("");
-                            setAuthInput({ email: "", password: "", name: "", avatar: "🌱" });
-                            showNotification("Account verified & logged in!");
-                        } else {
-                            showNotification(data.error || "Verification failed");
-                        }
-                    } else if (authMode === 'SIGNUP') {
+                    if (authMode === 'SIGNUP') {
                         // SIGN UP
                         const res = await fetch(`${httpUrl}/auth/signup`, {
                             method: 'POST', body: JSON.stringify(authInput)
                         });
                         const data = await res.json();
                         if (data.success) {
-                            setShowVerification(true);
-                            if (data.email_sent) {
-                                showNotification("Code sent to your email!");
-                            } else {
-                                showNotification(`Code: ${data.debug_code} (Email not configured)`);
-                            }
+                            showNotification("Success! Please check your email to verify.");
+                            setAuthMode('LOGIN');
                         } else {
                             showNotification(data.error || "Signup failed");
                         }
@@ -827,35 +805,14 @@
                             setUserAccount(data.user);
                             setShowAuth(false);
                             setAuthInput({ email: "", password: "", name: "", avatar: "🌱" });
-                            showNotification("Welcome back!");
+                            showNotification(`Welcome back, ${data.user.name}!`);
                         } else {
                             showNotification(data.error || "Login failed");
                         }
                     }
                 } catch (e) {
                     console.error(e);
-                    // FALLBACK FOR DEMO (If backend not deployed)
-                    if (authMode === 'SIGNUP') {
-                        setShowVerification(true);
-                        showNotification("Code sent! (Demo: 123456)");
-                        window.tempUser = { ...authInput, code: '123456' };
-                    } else if (showVerification) {
-                        if (verificationCode === '123456' && window.tempUser) {
-                            const u = { email: window.tempUser.email, name: window.tempUser.name, avatar: window.tempUser.avatar, saved: [] };
-                            setUserAccount(u);
-                            setShowAuth(false);
-                            setShowVerification(false);
-                            showNotification("Account verified (Offline Demo)");
-                        } else {
-                            showNotification("Invalid code");
-                        }
-                    } else {
-                        // Login fallback
-                        const u = { email: authInput.email, name: "Demo User", avatar: "🌱", saved: [] };
-                        setUserAccount(u);
-                        setShowAuth(false);
-                        showNotification("Logged in (Offline Demo)");
-                    }
+                    showNotification("Network error. Please check your connection.");
                 }
                 setAuthLoading(false);
             };
@@ -1083,35 +1040,28 @@
                         <div className="absolute inset-0 z-[10000000] bg-black/40 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
                             <div className="glass-panel p-6 rounded-2xl w-80 animate-pop-in shadow-2xl">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-lg font-bold text-slate-700">{showVerification ? 'Verify Email' : (authMode === 'LOGIN' ? 'Welcome Back' : 'Join Leaf Notes')}</h2>
+                                    <h2 className="text-lg font-bold text-slate-700">{authMode === 'LOGIN' ? 'Welcome Back' : 'Join Leaf Notes'}</h2>
                                     <button onClick={() => setShowAuth(false)} className="text-slate-400 hover:text-slate-700"><IconX /></button>
                                 </div>
                                 
-                                {!showVerification ? (
-                                    <>
-                                        <input type="email" placeholder="Email address" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-3" value={authInput.email} onChange={e => setAuthInput({...authInput, email: e.target.value})} />
-                                        {authMode === 'SIGNUP' && (
-                                            <div className="mb-3 animate-slide-down">
-                                                <input type="text" placeholder="Character Name" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-3" value={authInput.name} onChange={e => setAuthInput({...authInput, name: e.target.value})} />
-                                                <div className="flex justify-between gap-2">
-                                                    {["🌱","🦊","🤖","👽","🐱","🐶"].map(av => (
-                                                        <button key={av} onClick={() => setAuthInput({...authInput, avatar: av})} className={`w-9 h-9 rounded-full flex items-center justify-center text-lg border-2 transition-all ${authInput.avatar === av ? 'border-emerald-500 bg-emerald-50 scale-110' : 'border-transparent hover:bg-slate-100'}`}>
-                                                            {av}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        <input type="password" placeholder="Password" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-4" value={authInput.password} onChange={e => setAuthInput({...authInput, password: e.target.value})} />
-                                    </>
-                                ) : (
-                                    <input type="text" placeholder="Enter 6-digit code" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-4 text-center tracking-widest font-mono" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} />
+                                <input type="email" placeholder="Email address" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-3" value={authInput.email} onChange={e => setAuthInput({...authInput, email: e.target.value})} />
+                                {authMode === 'SIGNUP' && (
+                                    <div className="mb-3 animate-slide-down">
+                                        <input type="text" placeholder="Character Name" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-3" value={authInput.name} onChange={e => setAuthInput({...authInput, name: e.target.value})} />
+                                        <div className="flex justify-between gap-2">
+                                            {["🌱","🦊","🤖","👽","🐱","🐶"].map(av => (
+                                                <button key={av} onClick={() => setAuthInput({...authInput, avatar: av})} className={`w-9 h-9 rounded-full flex items-center justify-center text-lg border-2 transition-all ${authInput.avatar === av ? 'border-emerald-500 bg-emerald-50 scale-110' : 'border-transparent hover:bg-slate-100'}`}>
+                                                    {av}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
+                                <input type="password" placeholder="Password" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-4" value={authInput.password} onChange={e => setAuthInput({...authInput, password: e.target.value})} />
 
-                                <button onClick={handleAuthSubmit} disabled={authLoading} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-lg transition-colors mb-3 shadow-lg shadow-emerald-500/30 disabled:opacity-50">{authLoading ? 'Processing...' : (showVerification ? 'Verify Code' : (authMode === 'LOGIN' ? 'Log In' : 'Sign Up'))}</button>
+                                <button onClick={handleAuthSubmit} disabled={authLoading} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-lg transition-colors mb-3 shadow-lg shadow-emerald-500/30 disabled:opacity-50">{authLoading ? 'Processing...' : (authMode === 'LOGIN' ? 'Log In' : 'Sign Up')}</button>
                                 <div className="text-center">
-                                    {!showVerification && <button onClick={() => setAuthMode(authMode === 'LOGIN' ? 'SIGNUP' : 'LOGIN')} className="text-xs text-slate-500 hover:text-emerald-600 font-medium">{authMode === 'LOGIN' ? "Don't have an account? Sign up" : "Already have an account? Log in"}</button>}
-                                    {showVerification && <button onClick={() => setShowVerification(false)} className="text-xs text-slate-500 hover:text-emerald-600 font-medium">Back</button>}
+                                    <button onClick={() => setAuthMode(authMode === 'LOGIN' ? 'SIGNUP' : 'LOGIN')} className="text-xs text-slate-500 hover:text-emerald-600 font-medium">{authMode === 'LOGIN' ? "Don't have an account? Sign up" : "Already have an account? Log in"}</button>
                                 </div>
                             </div>
                         </div>
