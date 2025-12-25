@@ -36,21 +36,12 @@ echo https://github.com/inpicture/inpicture.cloud/settings/pages
 echo Select 'main' branch and '/ (root)' folder.
 echo ---------------------------------------------------
 echo.
-echo !!! DNS SETUP REQUIRED FOR HTTPS !!!
-echo Go to Hostinger (hPanel -> DNS Zone Editor) and add these A Records:
-echo    Type: A ^| Name: @ ^| Points to: 185.199.108.153
-echo    Type: A ^| Name: @ ^| Points to: 185.199.109.153
-echo    Type: A ^| Name: @ ^| Points to: 185.199.110.153
-echo    Type: A ^| Name: @ ^| Points to: 185.199.111.153
-echo.
-echo Also add a CNAME record:
-echo    Type: CNAME ^| Name: www ^| Points to: inpicture.github.io
-echo ---------------------------------------------------
-echo.
-echo !!! HTTPS STILL UNAVAILABLE? !!!
-echo 1. Wait: It can take up to 24 hours for the certificate to issue.
-echo 2. Fix: In GitHub Pages Settings, clear the "Custom domain" field and Save.
-echo    Then type "inpicture.cloud" again and Save. This forces a retry.
-echo 3. Check: In Hostinger, DELETE any "AAAA" (IPv6) records if they exist.
+echo !!! HTTPS FIX (THE "KICK") !!!
+echo If DNS is correct but HTTPS says "Unavailable":
+echo 1. Go to GitHub Pages Settings.
+echo 2. Click "Remove" next to Custom Domain (or delete text and Save).
+echo 3. Wait 2 minutes.
+echo 4. Type "inpicture.cloud" back in and Save.
+echo    (This forces GitHub to re-check DNS and issue the certificate)
 echo ---------------------------------------------------
 pause
