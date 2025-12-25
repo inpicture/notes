@@ -19,65 +19,22 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-        body { font-family: 'Inter', sans-serif; overflow: hidden; touch-action: none; background: #f8fafc; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(180deg, #FFFFFF 0%, #F5F7FA 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
 
         /* --- DARK MODE --- */
-        body.dark { background: #050505; color: #e5e5e5; }
-        body.dark .dot-grid { background-image: radial-gradient(#404040 1.5px, transparent 1.5px); background-color: #050505; }
-        body.dark .glass-panel { background: rgba(20, 20, 20, 0.9); border-color: rgba(255,255,255,0.08); color: #e5e5e5; }
-        body.dark .glass-window { background: rgba(18, 18, 18, 0.96); border-color: rgba(255,255,255,0.08); color: #e5e5e5; }
-        body.dark .glass-icon { background: rgba(30, 30, 30, 0.8); border-color: rgba(255,255,255,0.1); }
-        body.dark input, body.dark textarea { background: #171717; color: #e5e5e5; border-color: #404040; }
-        body.dark .text-slate-700 { color: #e5e5e5; }
-        body.dark .text-slate-600 { color: #d4d4d4; }
-        body.dark .text-slate-500 { color: #a3a3a3; }
-        body.dark .text-slate-400 { color: #737373; }
+        body.dark { background: #0f172a; color: #e2e8f0; }
+        body.dark .glass-panel { background: rgba(30, 41, 59, 0.7); border-color: rgba(255,255,255,0.1); }
+        body.dark .note-card { background: rgba(30, 41, 59, 0.6); border-color: rgba(255,255,255,0.05); }
         
         /* Dark Mode Map - Green Matrix Style */
         body.dark .leaflet-layer { filter: sepia(100%) hue-rotate(130deg) saturate(500%) contrast(1.2) brightness(1.4); }
         body.dark .toggle-active { background: #262626; color: #10b981; }
-
-        /* --- 1. ENDLESS CANVAS (Normal Cursor) --- */
-        .dot-grid {
-            background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
-            background-color: #f8fafc;
-            cursor: default; /* NORMAL CURSOR */
-        }
-
-        /* --- 2. GLASS WINDOW --- */
-        .glass-window {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0,0,0,0.05);
-            border-radius: 12px;
-            position: absolute;
-            transform-origin: center center;
-        }
-
-        /* --- 3. SMOOTH CINEMATIC ANIMATIONS --- */
-        
-        /* Open: Fuze / Form Animation */
-        @keyframes fuzeIn {
-            0% { opacity: 0; transform: scale(0.85); filter: blur(12px); }
-            100% { opacity: 1; transform: scale(1); filter: blur(0px); }
-        }
-        .animate-open { animation: fuzeIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-
-        /* Close: Fade Out & Shrink (Reverse) */
-        @keyframes gentleClose {
-            0% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(0.95); pointer-events: none; }
-        }
-        .animate-close { animation: gentleClose 0.2s ease-in forwards; }
-
-        /* Icon: Simple Fade In */
-        @keyframes iconFade {
-            from { opacity: 0; } to { opacity: 1; }
-        }
-        .animate-icon { animation: iconFade 0.3s ease-out; }
 
         @keyframes popIn {
             0% { opacity: 0; transform: scale(0.9) translateX(20px); }
@@ -85,29 +42,27 @@
         }
         .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        .smooth-move { transition: left 0.05s linear, top 0.05s linear; }
-        .dragging { transition: none !important; }
-
         /* --- 4. UI ELEMENTS --- */
-        .glass-icon {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease, background 0.2s;
-        }
-        .glass-icon:hover {
-            transform: scale(1.05);
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-
         .glass-panel {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(24px);
             border: 1px solid rgba(255, 255, 255, 0.8);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
         }
+        
+        .note-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .note-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
         .suggestions-list {
             position: absolute; top: 110%; left: 0; width: 100%;
             background: rgba(255, 255, 255, 0.98);
@@ -122,12 +77,6 @@
             background: #10b981; border: 2px solid white; border-radius: 50%;
             width: 14px; height: 14px; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
             transition: all 0.2s ease; cursor: pointer;
-            animation: markerSpread 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes markerSpread {
-            0% { transform: scale(0); opacity: 0; }
-            60% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
         }
         .note-marker:hover { transform: scale(1.5); background: #059669; z-index: 9999; }
         .note-marker.read { background: #94a3b8; box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.2); }
@@ -139,7 +88,6 @@
         
         #map-container { position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; }
         .view-globe #map-container { opacity: 1; pointer-events: auto; }
-        .view-globe .dot-grid { opacity: 0; pointer-events: none; }
 
         .notification-toast {
             position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
@@ -159,7 +107,6 @@
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             cursor: pointer; transition: transform 0.2s ease;
-            animation: markerSpread 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .cluster-marker:hover { transform: scale(1.15); background: #fff; z-index: 10000; }
 
@@ -195,7 +142,6 @@
         const IconMoon = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>;
         const IconBold = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>;
         const IconItalic = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg>;
-        const IconImage = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>;
 
         const CITIES = {
             // Countries
@@ -231,227 +177,6 @@
             "Warsaw, Poland": [52.2297, 21.0122], "Vienna, Austria": [48.2082, 16.3738]
         };
 
-        const HEADER_HEIGHT = 130;
-
-        // --- DESKTOP ICON (Green Graphic) ---
-        const DesktopIcon = ({ note, viewMode, canvasOffset, onOpen, onUpdate, onFocus, zIndex, isRead }) => {
-            const [localPos, setLocalPos] = useState({ x: 0, y: 0 });
-            const [isDragging, setIsDragging] = useState(false);
-
-            useEffect(() => {
-                if(!isDragging) {
-                    if (viewMode === 'HOME') setLocalPos({ x: note.canvasX + canvasOffset.x, y: note.canvasY + canvasOffset.y });
-                    else setLocalPos({ x: note.screenX, y: note.screenY });
-                }
-            }, [note, canvasOffset, viewMode, isDragging]);
-
-            const handleStart = (e) => {
-                e.stopPropagation();
-                onFocus(); // Layer Priority
-                setIsDragging(true);
-                
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const startX = clientX - localPos.x;
-                const startY = clientY - localPos.y;
-                const initialX = clientX;
-                const initialY = clientY;
-                let moved = false;
-
-                const handleMove = (ev) => {
-                    const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
-                    const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
-                    if (Math.abs(cx - initialX) > 5 || Math.abs(cy - initialY) > 5) moved = true;
-                    if (moved) {
-                        if (ev.cancelable) ev.preventDefault();
-                        setLocalPos({ x: cx - startX, y: Math.max(HEADER_HEIGHT, cy - startY) });
-                    }
-                };
-
-                const handleEnd = (ev) => {
-                    setIsDragging(false);
-                    if (moved) {
-                        const cx = ev.changedTouches ? ev.changedTouches[0].clientX : ev.clientX;
-                        const cy = ev.changedTouches ? ev.changedTouches[0].clientY : ev.clientY;
-                        const finalX = cx - startX;
-                        const finalY = Math.max(HEADER_HEIGHT, cy - startY);
-                        if (viewMode === 'HOME') onUpdate(note.id, { canvasX: finalX - canvasOffset.x, canvasY: finalY - canvasOffset.y });
-                        else onUpdate(note.id, { screenX: finalX, screenY: finalY });
-                    } else {
-                        onOpen(note.id); // Click to open
-                    }
-                    window.removeEventListener('mousemove', handleMove);
-                    window.removeEventListener('mouseup', handleEnd);
-                    window.removeEventListener('touchmove', handleMove);
-                    window.removeEventListener('touchend', handleEnd);
-                };
-                window.addEventListener('mousemove', handleMove);
-                window.addEventListener('mouseup', handleEnd);
-                window.addEventListener('touchmove', handleMove, { passive: false });
-                window.addEventListener('touchend', handleEnd);
-            };
-
-            if (viewMode === 'GLOBE') return null;
-
-            return (
-                <div 
-                    className={`absolute flex flex-col items-center gap-2 w-24 cursor-pointer group animate-icon ${isDragging ? 'dragging' : 'smooth-move'}`}
-                    style={{ left: localPos.x, top: localPos.y, zIndex: zIndex }} 
-                    onMouseDown={handleStart}
-                    onTouchStart={handleStart}
-                >
-                    <div className={`w-16 h-20 glass-icon rounded-lg flex flex-col items-center justify-center relative ${isRead ? 'grayscale opacity-80' : ''}`}>
-                        <IconFile className={isRead ? "text-slate-400 mb-1" : "text-emerald-500 mb-1"} />
-                        <div className={`w-8 h-0.5 rounded-full mb-1 ${isRead ? 'bg-slate-300' : 'bg-emerald-500/20'}`}></div>
-                        <div className={`w-6 h-0.5 rounded-full ${isRead ? 'bg-slate-300' : 'bg-emerald-500/20'}`}></div>
-                    </div>
-                    <div className="bg-white/60 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/50 shadow-sm max-w-[120px]">
-                        <p className="text-[11px] font-medium text-slate-700 truncate text-center select-none leading-tight">{note.content ? note.content.substring(0, 10) + "..." : "Leaf Note"}</p>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- NOTE WINDOW (Smooth Animation) ---
-        const NoteWindow = ({ note, isOwner, viewMode, canvasOffset, onMinimize, onDelete, onUpdate, onFocus, zIndex, onNotify, onViewProfile, isSaved, onToggleSave, isLiked, onToggleLike }) => {
-            const [localPos, setLocalPos] = useState({ x: 0, y: 0 });
-            const [isDragging, setIsDragging] = useState(false);
-            const [isClosing, setIsClosing] = useState(false);
-
-            useEffect(() => {
-                if (!isDragging) {
-                    if (viewMode === 'HOME') setLocalPos({ x: note.canvasX + canvasOffset.x, y: note.canvasY + canvasOffset.y });
-                    else setLocalPos({ x: note.screenX, y: note.screenY });
-                }
-            }, [note, canvasOffset, viewMode, isDragging]);
-
-            const handleDragStart = (e) => {
-                if (e.target.closest('button') || e.target.closest('textarea')) return;
-                e.stopPropagation();
-                onFocus(); // Layer Priority
-                setIsDragging(true);
-                
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const startX = clientX - localPos.x;
-                const startY = clientY - localPos.y;
-
-                const handleMove = (ev) => {
-                    const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
-                    const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
-                    if (ev.cancelable) ev.preventDefault();
-                    setLocalPos({ x: cx - startX, y: Math.max(HEADER_HEIGHT, cy - startY) });
-                };
-
-                const handleUp = (ev) => {
-                    setIsDragging(false);
-                    const cx = ev.changedTouches ? ev.changedTouches[0].clientX : ev.clientX;
-                    const cy = ev.changedTouches ? ev.changedTouches[0].clientY : ev.clientY;
-                    const finalX = cx - startX;
-                    const finalY = Math.max(HEADER_HEIGHT, cy - startY);
-                    if (viewMode === 'HOME') onUpdate(note.id, { canvasX: finalX - canvasOffset.x, canvasY: finalY - canvasOffset.y });
-                    else onUpdate(note.id, { screenX: finalX, screenY: finalY });
-                    window.removeEventListener('mousemove', handleMove);
-                    window.removeEventListener('mouseup', handleUp);
-                    window.removeEventListener('touchmove', handleMove);
-                    window.removeEventListener('touchend', handleUp);
-                };
-                window.addEventListener('mousemove', handleMove);
-                window.addEventListener('mouseup', handleUp);
-                window.addEventListener('touchmove', handleMove, { passive: false });
-                window.addEventListener('touchend', handleUp);
-            };
-
-            const handleShare = async () => {
-                let text = "";
-                if (note.published) {
-                    text = `I just published my note in InpictureNotes, view it here: https://inpicturenotes.netlify.app/\n\nLook at this note from ${note.locationName} in the InpictureNotes app!`;
-                } else {
-                    text = note.content;
-                }
-
-                if (navigator.share) try { await navigator.share({ title: 'InpictureNotes', text: text }); } catch (err) {}
-                else { navigator.clipboard.writeText(text); onNotify("Link copied!"); }
-            };
-
-            const handleReport = () => {
-                const current = note.reports || 0;
-                onUpdate(note.id, { reports: current + 1 });
-                onNotify("Reported. If this note receives 10 reports, it will fall.");
-            };
-
-            const triggerMinimize = (e) => {
-                e.stopPropagation();
-                setIsClosing(true);
-            };
-
-            if (note.minimized && !isClosing) return null; 
-
-            return (
-                <div 
-                    className={`absolute flex flex-col glass-window ${isClosing ? 'animate-close' : 'animate-open'} ${isDragging ? 'dragging shadow-2xl' : 'smooth-move'} dark:shadow-black/50`}
-                    style={{ left: localPos.x, top: localPos.y, width: '300px', height: '360px', zIndex: zIndex }}
-                    onMouseDown={onFocus} 
-                    onAnimationEnd={() => {
-                        if (isClosing) {
-                            onMinimize(note.id);
-                            setIsClosing(false);
-                        }
-                    }}
-                >
-                    <div onMouseDown={handleDragStart} onTouchStart={handleDragStart} className="h-14 bg-white/50 dark:bg-white/5 border-b border-white/60 dark:border-white/10 flex items-center justify-between px-3 cursor-move select-none">
-                        <div className="flex items-center gap-3 pl-1 text-slate-600">
-                            <div className="cursor-pointer hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); onViewProfile(note); }} onMouseDown={e => e.stopPropagation()}>
-                                {note.authorAvatar ? <div className="avatar">{note.authorAvatar}</div> : <IconPen size={14} className="text-indigo-500" />}
-                            </div>
-                            <div className="flex flex-col pointer-events-none">
-                                {note.authorName && <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 leading-tight">{note.authorName}</span>}
-                                <span className="text-[9px] font-medium uppercase text-slate-500/70 leading-tight">{note.locationName}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 pl-2">
-                            {isOwner ? (
-                                <>
-                                    <div className="flex items-center gap-1 bg-white/40 px-2 py-1 rounded-full mr-1">
-                                        <IconHeart size={12} fill={true} className="text-rose-500" />
-                                        <span className="text-[10px] font-bold text-slate-600">{note.likes || 0}</span>
-                                    </div>
-                                    <button onClick={handleShare} className="p-1.5 hover:bg-indigo-100 text-slate-500 rounded"><IconShare size={14} /></button>
-                                    <button onClick={() => onDelete(note.id)} className="p-1.5 hover:bg-rose-100 text-slate-500 rounded"><IconTrash size={14} /></button>
-                                    {!note.published ? (
-                                        <button onClick={() => { onUpdate(note.id, { published: true }); onNotify("Note published to the Globe!"); }} className="p-1.5 hover:bg-emerald-100 text-emerald-600 rounded" title="Publish to Globe"><IconUpload size={14} /></button>
-                                    ) : (
-                                        <div className="p-1.5 text-emerald-500" title="Published on Globe"><IconGlobe size={14} /></div>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <button onClick={() => onToggleLike(note.id)} className={`flex items-center gap-1 px-2 py-1 rounded-full transition-colors mr-1 ${isLiked ? 'bg-rose-100 text-rose-600' : 'bg-white/40 text-slate-500 hover:bg-rose-50 hover:text-rose-500'}`}>
-                                        <IconHeart size={12} fill={isLiked} />
-                                        <span className="text-[10px] font-bold">{note.likes || 0}</span>
-                                    </button>
-                                    <button onClick={() => onToggleSave(note.id)} className={`p-1.5 rounded transition-colors ${isSaved ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`} title={isSaved ? "Unsave" : "Save"}><IconBookmark size={14} fill={isSaved} /></button>
-                                    <button onClick={handleShare} className="p-1.5 hover:bg-indigo-100 text-slate-500 rounded"><IconShare size={14} /></button>
-                                    <button onClick={handleReport} className="p-1.5 hover:bg-amber-100 text-amber-600 rounded" title="Report"><IconFlag size={14} /></button>
-                                </>
-                            )}
-                            <button onClick={triggerMinimize} className="p-1.5 hover:bg-slate-200 text-slate-500 rounded"><IconX size={14} /></button>
-                        </div>
-                    </div>
-                    <div className="flex-1 relative bg-white/30 dark:bg-black/20 overflow-hidden">
-                        <textarea 
-                            readOnly={!isOwner}
-                            className="w-full h-full bg-transparent p-4 outline-none resize-none text-slate-700 dark:text-slate-200 placeholder-slate-400 text-sm leading-relaxed"
-                            placeholder="Write something..."
-                            value={note.content}
-                            onChange={(e) => onUpdate(note.id, { content: e.target.value })}
-                            onMouseDown={e => e.stopPropagation()}
-                        />
-                    </div>
-                </div>
-            );
-        };
-
         const App = () => {
             const [view, setView] = useState('HOME');
             const [notification, setNotification] = useState(null);
@@ -470,15 +195,10 @@
             const [profileTab, setProfileTab] = useState('NOTES'); // NOTES or SAVED
             const [isEditingName, setIsEditingName] = useState(false);
             const [editNameInput, setEditNameInput] = useState("");
-            const [draftContent, setDraftContent] = useState("");
+            const editorRef = useRef(null);
 
             const [darkMode, setDarkMode] = useState(() => {
                 try { return JSON.parse(localStorage.getItem('leaf_dark_mode')) || false; } catch { return false; }
-            });
-
-            const getCenterPos = () => ({
-                screenX: window.innerWidth / 2 - 150 + (Math.random() * 100 - 50),
-                screenY: window.innerHeight / 2 - 180 + (Math.random() * 100 - 50)
             });
 
             useEffect(() => {
@@ -531,8 +251,6 @@
             const [notes, setNotes] = useState(() => {
                 try { return JSON.parse(localStorage.getItem('leaf_cached_notes')) || []; } catch { return []; }
             });
-            // UI: Local Viewport State (Open/Closed, Window Position) - NOT SYNCED
-            const [localUi, setLocalUi] = useState({});
 
             const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
             const [isCloudConnected, setIsCloudConnected] = useState(false);
@@ -541,7 +259,6 @@
             const globalZ = useRef(1000);
             const nextZ = () => { globalZ.current += 1; return globalZ.current; };
 
-            const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
             const [search, setSearch] = useState("");
             const [searchSuggestions, setSearchSuggestions] = useState([]);
             const [isSettingHome, setIsSettingHome] = useState(false);
@@ -607,9 +324,7 @@
                     if (note) {
                         if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
                         mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
-                        setTimeout(() => {
-                            updateNote(note.id, { minimized: false, zIndex: nextZ(), ...getCenterPos() });
-                        }, 2400);
+                        // No longer opening windows, just flying
                     }
                     setPendingFocus(null);
                 }
@@ -626,40 +341,17 @@
                 } else {
                     if (mapRef.current) {
                         mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
-                        setTimeout(() => {
-                            updateNote(note.id, { minimized: false, zIndex: nextZ(), ...getCenterPos() });
-                        }, 2400);
                     }
                 }
             };
 
             const visibleNotes = useMemo(() => {
-                // 1. Filter based on View
-                let filtered = notes;
-                if (view === 'HOME') {
-                    // In HOME, only show MY notes
-                    filtered = notes.filter(n => n.ownerId === userId);
-                } else {
-                    // GLOBE: Show published notes that haven't fallen
-                    // AND are less than 24 hours old (24 * 60 * 60 * 1000 = 86400000 ms)
-                    const now = Date.now();
-                    const ONE_DAY = 86400000;
-                    filtered = notes.filter(n => n.published && (n.reports || 0) < 10 && (now - n.id < ONE_DAY));
-                }
-                
-                // 2. Merge with Local UI State (Viewport)
-                return filtered.map(n => {
-                    const ui = localUi[n.id] || {};
-                    return {
-                        ...n,
-                        // UI state overrides or defaults
-                        minimized: ui.minimized !== undefined ? ui.minimized : true, // Default closed
-                        zIndex: ui.zIndex || 0,
-                        screenX: ui.screenX || n.screenX || 100,
-                        screenY: ui.screenY || n.screenY || 100
-                    };
-                });
-            }, [notes, localUi, view, userId]);
+                // Show all published notes + my notes
+                // Sort by date desc
+                return notes
+                    .filter(n => (n.published || n.ownerId === userId) && (n.reports || 0) < 10)
+                    .sort((a, b) => b.id - a.id);
+            }, [notes, userId]);
 
             // Init Map
             useEffect(() => {
@@ -751,7 +443,6 @@
                             const marker = L.marker([note.lat, note.lng], { icon }).addTo(map);
                             marker.on('click', () => {
                                 if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
-                                updateNote(note.id, { minimized: false, zIndex: nextZ(), ...getCenterPos() }); 
                                 map.flyTo([note.lat, note.lng], Math.max(map.getZoom(), 8), { duration: 2.2, easeLinearity: 0.2 });
                             });
                             markersRef.current[note.id] = marker;
@@ -760,10 +451,6 @@
                 }
             }, [visibleNotes, view, mapReady, zoomLevel, readNotes]);
 
-            const bringToFront = (id) => {
-                updateNote(id, { zIndex: nextZ() });
-            };
-
             useEffect(() => {
                 // Auto-delete fallen notes if I own them
                 notes.forEach(n => {
@@ -771,33 +458,20 @@
                 });
             }, [notes]);
 
-            const createNote = (x, y, lat, lng, source, initialContent = "") => {
-                const startY = Math.max(HEADER_HEIGHT + 20, y);
-                const finalLat = source === 'HOME' ? (homeLocation.lat + (Math.random() * 0.05)) : lat; 
-                const finalLng = source === 'HOME' ? (homeLocation.lng + (Math.random() * 0.05)) : lng;
-                const locName = source === 'HOME' ? homeLocation.name : "Map Location";
+            const createNote = (content) => {
+                const finalLat = homeLocation.lat + (Math.random() * 0.05); 
+                const finalLng = homeLocation.lng + (Math.random() * 0.05);
+                const locName = homeLocation.name;
 
                 const newNote = {
                     id: Date.now(),
                     ownerId: userId, // Mark as mine
-                    content: initialContent,
-                    canvasX: source === 'HOME' ? (x - canvasOffset.x) : 0,
-                    canvasY: source === 'HOME' ? (startY - canvasOffset.y) : 0,
-                    // Initial default positions for data
-                    screenX: x - 150,
-                    screenY: startY - 180,
+                    content: content,
                     lat: finalLat, lng: finalLng, locationName: locName,
                     authorName: userAccount ? userAccount.name : "Anonymous",
                     authorAvatar: userAccount ? userAccount.avatar : "👤",
-                    history: [],
-                    published: false, reports: 0, likes: 0
+                    published: true, reports: 0, likes: 0
                 };
-
-                // Open locally immediately
-                setLocalUi(prev => ({
-                    ...prev,
-                    [newNote.id]: { minimized: false, zIndex: nextZ(), screenX: newNote.screenX, screenY: newNote.screenY }
-                }));
 
                 setNotes(prev => [...prev, newNote]);
 
@@ -807,24 +481,7 @@
             };
 
             const updateNote = (id, updates) => {
-                const UI_KEYS = ['minimized', 'zIndex', 'screenX', 'screenY'];
-                const uiUpdates = {};
-                const dataUpdates = {};
-                
-                Object.keys(updates).forEach(k => {
-                    if (UI_KEYS.includes(k)) uiUpdates[k] = updates[k];
-                    else dataUpdates[k] = updates[k];
-                });
-
-                // 1. Apply UI updates locally (Viewport)
-                if (Object.keys(uiUpdates).length > 0) {
-                    setLocalUi(prev => ({
-                        ...prev,
-                        [id]: { ...(prev[id] || {}), ...uiUpdates }
-                    }));
-                }
-
-                // 2. Apply Data updates globally & sync
+                const dataUpdates = updates;
                 if (Object.keys(dataUpdates).length > 0) {
                     setNotes(prev => prev.map(n => n.id === id ? { ...n, ...dataUpdates } : n));
                     if (wsRef.current && wsRef.current.readyState === 1) {
@@ -835,24 +492,24 @@
 
             const deleteNote = (id) => {
                 setNotes(prev => prev.filter(n => n.id !== id));
-                setLocalUi(prev => { const next = { ...prev }; delete next[id]; return next; });
-
                 if (wsRef.current && wsRef.current.readyState === 1) {
                     wsRef.current.send(JSON.stringify({ type: 'DELETE', id }));
                 }
             };
 
             const handlePostDraft = () => {
-                if (!draftContent.trim()) return;
-                createNote(window.innerWidth / 2, window.innerHeight / 2, 0, 0, 'HOME', draftContent);
-                setDraftContent("");
+                if (!editorRef.current) return;
+                const content = editorRef.current.innerHTML;
+                if (!editorRef.current.innerText.trim()) return;
+                
+                createNote(content);
+                editorRef.current.innerHTML = "";
                 showNotification("Note posted!");
             };
 
-            const handleCanvasClick = (e) => {
-                if (e.target.closest('.glass-window') || e.target.closest('.group') || e.target.closest('.ui-layer') || e.target.closest('button')) return;
-                if (e.clientY < HEADER_HEIGHT) return;
-                createNote(e.clientX, e.clientY, 0, 0, 'HOME');
+            const handleFormat = (cmd) => {
+                document.execCommand(cmd, false, null);
+                if (editorRef.current) editorRef.current.focus();
             };
 
             const allLocations = useMemo(() => {
@@ -1057,7 +714,6 @@
 
             return (
                 <div className={`relative w-screen h-[100dvh] overflow-hidden ${view === 'GLOBE' ? 'view-globe' : ''}`}>
-                    <div className="absolute inset-0 dot-grid" style={{ backgroundPosition: `${canvasOffset.x}px ${canvasOffset.y}px` }} onClick={handleCanvasClick}></div>
                     <div id="map-container"></div>
 
                     {notification && <div className="notification-toast">{notification}</div>}
@@ -1094,36 +750,73 @@
                         </div>
                     </div>
 
-                    {/* HOME INPUT PLACEHOLDER */}
+                    {/* FEED VIEW */}
                     {view === 'HOME' && (
-                        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-[90%] max-w-md z-[4000] pointer-events-auto">
-                            <div className="glass-panel !bg-white/90 dark:!bg-neutral-900/90 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-3 transition-all">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                        <IconGlobe size={12} />
-                                        <span>{homeLocation.name}</span>
+                        <div className="absolute inset-0 pt-20 overflow-y-auto z-[1000] pointer-events-auto">
+                            <div className="max-w-xl mx-auto px-4 pb-32">
+                                
+                                {/* INPUT CARD */}
+                                <div className="note-card rounded-3xl p-5 mb-8">
+                                    <div className="flex items-center gap-2 mb-3 border-b border-slate-200/50 pb-2">
+                                        <button onClick={() => handleFormat('bold')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"><IconBold size={18}/></button>
+                                        <button onClick={() => handleFormat('italic')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"><IconItalic size={18}/></button>
+                                    </div>
+                                    <div 
+                                        ref={editorRef}
+                                        contentEditable
+                                        className="min-h-[100px] outline-none text-slate-700 dark:text-slate-200 text-base leading-relaxed placeholder-slate-400"
+                                        placeholder="What's happening?"
+                                    />
+                                    <div className="flex justify-between items-center mt-4">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                            <IconLocation size={12} />
+                                            <span>{homeLocation.name}</span>
+                                        </div>
+                                        <button 
+                                            onClick={handlePostDraft}
+                                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                                        >
+                                            Share
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <textarea 
-                                    className="w-full h-24 bg-transparent outline-none resize-none text-slate-700 dark:text-slate-200 placeholder-slate-400 text-sm leading-relaxed"
-                                    placeholder="What's on your mind?"
-                                    value={draftContent}
-                                    onChange={(e) => setDraftContent(e.target.value)}
-                                />
 
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                                    <div className="flex items-center gap-3 text-slate-400">
-                                        <button className="hover:text-slate-600 dark:hover:text-slate-200"><IconBold size={18} /></button>
-                                        <button className="hover:text-slate-600 dark:hover:text-slate-200"><IconItalic size={18} /></button>
-                                        <button className="hover:text-slate-600 dark:hover:text-slate-200"><IconImage size={18} /></button>
-                                    </div>
-                                    <button 
-                                        onClick={handlePostDraft}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-500/30 transition-all active:scale-95"
-                                    >
-                                        Share
-                                    </button>
+                                {/* FEED LIST */}
+                                <div className="flex flex-col gap-4">
+                                    {visibleNotes.map(note => (
+                                        <div key={note.id} className="note-card p-5 rounded-2xl flex flex-col gap-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="avatar">{note.authorAvatar || "👤"}</div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{note.authorName}</span>
+                                                        <span className="text-[10px] text-slate-400">{note.locationName}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => toggleLikeNote(note.id)} className={`flex items-center gap-1 text-xs font-bold transition-colors ${likedNotes.includes(note.id) ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'}`}>
+                                                        <IconHeart size={14} fill={likedNotes.includes(note.id)} />
+                                                        {note.likes || 0}
+                                                    </button>
+                                                    {note.ownerId === userId && (
+                                                        <button onClick={() => deleteNote(note.id)} className="text-slate-300 hover:text-rose-500"><IconTrash size={14}/></button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{__html: note.content}} />
+                                            
+                                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                                <span className="text-[10px] text-slate-400">{new Date(note.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                <button onClick={() => toggleSaveNote(note.id)} className={`text-slate-400 hover:text-emerald-500 ${userAccount && userAccount.saved && userAccount.saved.includes(note.id) ? 'text-emerald-500' : ''}`}>
+                                                    <IconBookmark size={16} fill={userAccount && userAccount.saved && userAccount.saved.includes(note.id)} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {visibleNotes.length === 0 && (
+                                        <div className="text-center py-10 text-slate-400 text-sm">No notes yet. Be the first!</div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1281,33 +974,6 @@
                             </div>
                         </div>
                     )}
-
-                    {visibleNotes.map(note => (
-                        <React.Fragment key={note.id}>
-                            <DesktopIcon 
-                                note={note} viewMode={view} canvasOffset={canvasOffset}
-                                onOpen={(id) => { updateNote(id, { minimized: false }); bringToFront(id); }}
-                                isRead={readNotes.includes(note.id)}
-                                onUpdate={updateNote}
-                                onFocus={() => bringToFront(note.id)}
-                                zIndex={note.zIndex}
-                            />
-                            <NoteWindow 
-                                note={note} viewMode={view} canvasOffset={canvasOffset}
-                                isOwner={note.ownerId === userId}
-                                onMinimize={(id) => updateNote(id, { minimized: true })}
-                                onDelete={deleteNote} onUpdate={updateNote}
-                                onFocus={() => bringToFront(note.id)}
-                                onNotify={showNotification}
-                                onViewProfile={openProfile}
-                                isSaved={userAccount && userAccount.saved && userAccount.saved.includes(note.id)}
-                                onToggleSave={toggleSaveNote}
-                                isLiked={likedNotes.includes(note.id)}
-                                onToggleLike={toggleLikeNote}
-                                zIndex={note.zIndex}
-                            />
-                        </React.Fragment>
-                    ))}
                 </div>
             );
         };
