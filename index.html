@@ -29,7 +29,7 @@
         body.dark .text-slate-400 { color: #737373; }
         
         /* Dark Mode Map - Green Matrix Style */
-        body.dark .leaflet-layer { filter: sepia(100%) hue-rotate(70deg) saturate(600%) contrast(1.3) brightness(1.2); }
+        body.dark .leaflet-layer { filter: sepia(100%) hue-rotate(130deg) saturate(500%) contrast(1.2) brightness(1.4); }
         body.dark .toggle-active { background: #262626; color: #10b981; }
 
         /* --- 1. ENDLESS CANVAS (Normal Cursor) --- */
@@ -1083,7 +1083,7 @@
                     <div className="absolute top-0 left-0 w-full flex justify-center pt-8 z-[5000] pointer-events-none ui-layer">
                         <div className="flex flex-col items-center gap-5 pointer-events-auto">
                             <div className="relative group w-[90%] max-w-xs sm:w-80">
-                                <input type="text" placeholder="Search" className="glass-panel !bg-white/60 dark:!bg-neutral-900/80 backdrop-blur-xl text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-6 pr-11 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg" value={search} onChange={handleSearchChange} />
+                                <input type="text" placeholder="Search" className="glass-panel !bg-white dark:!bg-neutral-900/80 backdrop-blur-xl text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-6 pr-11 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg" value={search} onChange={handleSearchChange} />
                                 <div className="absolute inset-y-0 right-4 flex items-center text-slate-500"><IconSearch /></div>
                                 {searchSuggestions.length > 0 && (
                                     <div className="suggestions-list">
