@@ -6,6 +6,11 @@
     <title>Leaf Notes OS</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -479,7 +484,13 @@
 
             useEffect(() => {
                 localStorage.setItem('leaf_dark_mode', JSON.stringify(darkMode));
-                if (darkMode) document.body.classList.add('dark'); else document.body.classList.remove('dark');
+                if (darkMode) {
+                    document.body.classList.add('dark');
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.body.classList.remove('dark');
+                    document.documentElement.classList.remove('dark');
+                }
             }, [darkMode]);
 
             const flashNotifications = () => {
