@@ -358,7 +358,7 @@
                 try { return JSON.parse(localStorage.getItem('leaf_cached_notes')) || []; } catch { return []; }
             });
 
-            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
+            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://YOUR-WORKER-SUBDOMAIN.workers.dev");
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const wsRef = useRef(null);
 
@@ -786,7 +786,8 @@
                     if (authMode === 'SIGNUP') {
                         // SIGN UP
                         const res = await fetch(`${httpUrl}/auth/signup`, {
-                            method: 'POST', body: JSON.stringify(authInput)
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(authInput)
                         });
                         const data = await res.json();
                         if (data.success) {
@@ -798,7 +799,8 @@
                     } else {
                         // LOGIN
                         const res = await fetch(`${httpUrl}/auth/login`, {
-                            method: 'POST', body: JSON.stringify(authInput)
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(authInput)
                         });
                         const data = await res.json();
                         if (data.success) {
@@ -834,6 +836,7 @@
                 try {
                     const res = await fetch(`${httpUrl}/auth/update`, {
                         method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: userAccount.email, updates: { name: editNameInput } })
                     });
                     const data = await res.json();
@@ -1104,6 +1107,16 @@
                                                 )}
                                             </div>
                                         )}
+                                    </div>
+                                )}
+
+                                {viewProfile.isMe && (
+                                    <div className="w-full mb-4 bg-white dark:bg-neutral-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Server Connection</span>
+                                            <div className={`w-2 h-2 rounded-full ${isCloudConnected ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                        </div>
+                                        <input type="text" className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 rounded px-2 py-1 text-xs text-slate-600 dark:text-slate-300 outline-none focus:border-emerald-500 font-mono" value={cloudUrl} onChange={e => setCloudUrl(e.target.value)} placeholder="wss://..." />
                                     </div>
                                 )}
 
