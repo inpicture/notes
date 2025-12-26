@@ -277,8 +277,6 @@
             const notifListTimer = useRef(null);
             const [ticker, setTicker] = useState(() => Date.now());
             const [zoomLevel, setZoomLevel] = useState(5);
-            const [showAuth, setShowAuth] = useState(false);
-            const [authMode, setAuthMode] = useState('LOGIN'); // LOGIN or SIGNUP
             const [viewProfile, setViewProfile] = useState(null); // { name, avatar, id, isMe }
             const [profileTab, setProfileTab] = useState('NOTES'); // NOTES or SAVED
             const [isEditingName, setIsEditingName] = useState(false);
@@ -342,10 +340,8 @@
                 return id;
             });
             const [userAccount, setUserAccount] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('leaf_user_account')); } catch { return null; }
+                try { return JSON.parse(localStorage.getItem('leaf_user_account')) || { name: "Explorer", avatar: "🌱", saved: [] }; } catch { return { name: "Explorer", avatar: "🌱", saved: [] }; }
             });
-            const [authInput, setAuthInput] = useState({ email: "", password: "", name: "", avatar: "🌱" });
-            const [authLoading, setAuthLoading] = useState(false);
             const [readNotes, setReadNotes] = useState(() => {
                 try { return JSON.parse(localStorage.getItem('leaf_read_notes')) || []; } catch { return []; }
             });
@@ -736,19 +732,7 @@
                 }
             }, [showLocationPicker]);
 
-            const handleLogout = () => {
-                setUserAccount(null);
-                localStorage.removeItem('leaf_user_account');
-                setViewProfile(null);
-                showNotification("Logged out successfully");
-            };
-
             const toggleSaveNote = async (noteId) => {
-                if (!userAccount) {
-                    setShowAuth(true);
-                    showNotification("Please login to save notes");
-                    return;
-                }
                 const saved = userAccount.saved || [];
                 let newSaved;
                 if (saved.includes(noteId)) {
@@ -776,55 +760,6 @@
                 else setLikedNotes(prev => [...prev, noteId]);
             };
 
-            const handleAuthSubmit = async () => {
-                if (!authInput.email || !authInput.password) return;
-                
-                if (cloudUrl.includes("YOUR-WORKER-SUBDOMAIN")) {
-                    showNotification("Please set your Server URL in Profile first!");
-                    return;
-                }
-
-                setAuthLoading(true);
-                
-                const httpUrl = cloudUrl.replace('wss://', 'https://');
-                
-                try {
-                    if (authMode === 'SIGNUP') {
-                        // SIGN UP
-                        const res = await fetch(`${httpUrl}/auth/signup`, {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(authInput)
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            showNotification("Success! Please check your email to verify.");
-                            setAuthMode('LOGIN');
-                        } else {
-                            showNotification(data.error || "Signup failed");
-                        }
-                    } else {
-                        // LOGIN
-                        const res = await fetch(`${httpUrl}/auth/login`, {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(authInput)
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            setUserAccount(data.user);
-                            setShowAuth(false);
-                            setAuthInput({ email: "", password: "", name: "", avatar: "🌱" });
-                            showNotification(`Welcome back, ${data.user.name}!`);
-                        } else {
-                            showNotification(data.error || "Login failed");
-                        }
-                    }
-                } catch (e) {
-                    console.error(e);
-                    showNotification("Network error. Please check your connection.");
-                }
-                setAuthLoading(false);
-            };
-
             const handleHomeChange = (e) => {
                 const val = e.target.value; setHomeInput(val);
                 if (val.length > 1) setHomeSuggestions(Object.keys(CITIES).filter(c => c.toLowerCase().includes(val.toLowerCase())));
@@ -837,29 +772,12 @@
             };
 
             const handleUpdateProfile = async () => {
-                if (!editNameInput.trim() || !userAccount) return;
-                const httpUrl = cloudUrl.replace('wss://', 'https://');
-                try {
-                    const res = await fetch(`${httpUrl}/auth/update`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: userAccount.email, updates: { name: editNameInput } })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        const updated = { ...userAccount, name: editNameInput };
-                        setUserAccount(updated);
-                        setViewProfile(prev => ({ ...prev, name: editNameInput }));
-                        setIsEditingName(false);
-                        showNotification("Profile name updated!");
-                    } else { showNotification(data.error || "Update failed"); }
-                } catch (e) {
-                    const updated = { ...userAccount, name: editNameInput };
-                    setUserAccount(updated);
-                    setViewProfile(prev => ({ ...prev, name: editNameInput }));
-                    setIsEditingName(false);
-                    showNotification("Profile updated (Offline)");
-                }
+                if (!editNameInput.trim()) return;
+                const updated = { ...userAccount, name: editNameInput };
+                setUserAccount(updated);
+                setViewProfile(prev => ({ ...prev, name: editNameInput }));
+                setIsEditingName(false);
+                showNotification("Profile name updated!");
             };
 
             const openProfile = (note) => {
@@ -867,7 +785,7 @@
                 const profileData = note ? {
                     id: note.ownerId, name: note.authorName || "Anonymous", avatar: note.authorAvatar || "👤", isMe
                 } : {
-                    id: userId, name: userAccount ? userAccount.name : "Guest", avatar: userAccount ? userAccount.avatar : "👤", isMe: true, isGuest: !userAccount
+                    id: userId, name: userAccount.name, avatar: userAccount.avatar, isMe: true
                 };
                 setViewProfile(profileData);
                 setProfileTab('NOTES');
@@ -886,7 +804,7 @@
                         {/* Profile (Left) */}
                         <div className="pointer-events-auto">
                             <button onClick={() => openProfile(null)} className={`glass-panel p-2 rounded-full hover:scale-105 transition-transform flex items-center justify-center shadow-lg ${userAccount ? 'text-emerald-600' : 'text-slate-600'}`}>
-                                {userAccount ? <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-lg border-2 border-white shadow-sm">{userAccount.avatar}</div> : <IconUser size={24} className="dark:text-white" />}
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-lg border-2 border-white shadow-sm">{userAccount.avatar}</div>
                             </button>
                         </div>
 
@@ -1045,37 +963,6 @@
                         </div>
                     )}
 
-                    {showAuth && (
-                        <div className="absolute inset-0 z-[10000000] bg-black/40 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
-                            <div className="glass-panel p-6 rounded-2xl w-80 animate-pop-in shadow-2xl">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-lg font-bold text-slate-700">{authMode === 'LOGIN' ? 'Welcome Back' : 'Join Leaf Notes'}</h2>
-                                    <button onClick={() => setShowAuth(false)} className="text-slate-400 hover:text-slate-700"><IconX /></button>
-                                </div>
-                                
-                                <input type="email" placeholder="Email address" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-3" value={authInput.email} onChange={e => setAuthInput({...authInput, email: e.target.value})} />
-                                {authMode === 'SIGNUP' && (
-                                    <div className="mb-3 animate-slide-down">
-                                        <input type="text" placeholder="Character Name" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-3" value={authInput.name} onChange={e => setAuthInput({...authInput, name: e.target.value})} />
-                                        <div className="flex justify-between gap-2">
-                                            {["🌱","🦊","🤖","👽","🐱","🐶"].map(av => (
-                                                <button key={av} onClick={() => setAuthInput({...authInput, avatar: av})} className={`w-9 h-9 rounded-full flex items-center justify-center text-lg border-2 transition-all ${authInput.avatar === av ? 'border-emerald-500 bg-emerald-50 scale-110' : 'border-transparent hover:bg-slate-100'}`}>
-                                                    {av}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                <input type="password" placeholder="Password" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-emerald-400 mb-4" value={authInput.password} onChange={e => setAuthInput({...authInput, password: e.target.value})} />
-
-                                <button onClick={handleAuthSubmit} disabled={authLoading} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-lg transition-colors mb-3 shadow-lg shadow-emerald-500/30 disabled:opacity-50">{authLoading ? 'Processing...' : (authMode === 'LOGIN' ? 'Log In' : 'Sign Up')}</button>
-                                <div className="text-center">
-                                    <button onClick={() => setAuthMode(authMode === 'LOGIN' ? 'SIGNUP' : 'LOGIN')} className="text-xs text-slate-500 hover:text-emerald-600 font-medium">{authMode === 'LOGIN' ? "Don't have an account? Sign up" : "Already have an account? Log in"}</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {viewProfile && (
                         <div className="absolute inset-0 z-[6000] bg-black/30 backdrop-blur-sm flex items-center justify-center pointer-events-auto" onClick={() => setViewProfile(null)}>
                             <div className="glass-panel p-6 rounded-2xl w-80 animate-pop-in shadow-2xl flex flex-col items-center relative transition-all" onClick={e => e.stopPropagation()}>
@@ -1091,7 +978,7 @@
                                 ) : (
                                     <div className="flex items-center gap-2 mb-4">
                                         <h2 className="text-xl font-bold text-slate-800">{viewProfile.name}</h2>
-                                        {viewProfile.isMe && !viewProfile.isGuest && <button onClick={() => { setIsEditingName(true); setEditNameInput(viewProfile.name); }} className="text-slate-400 hover:text-emerald-600"><IconPen size={14} /></button>}
+                                        {viewProfile.isMe && <button onClick={() => { setIsEditingName(true); setEditNameInput(viewProfile.name); }} className="text-slate-400 hover:text-emerald-600"><IconPen size={14} /></button>}
                                     </div>
                                 )}
                                 
@@ -1151,18 +1038,6 @@
                                         ))}
                                     </div>
                                 </div>
-
-                                {viewProfile.isMe && !viewProfile.isGuest && (
-                                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold py-2 rounded-lg transition-colors text-xs">
-                                        <IconLogout size={14} /> Log Out
-                                    </button>
-                                )}
-
-                                {viewProfile.isGuest && (
-                                    <button onClick={() => { setViewProfile(null); setShowAuth(true); }} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg transition-colors text-xs shadow-lg shadow-emerald-500/30">
-                                        Log In / Sign Up
-                                    </button>
-                                )}
                             </div>
                         </div>
                     )}
