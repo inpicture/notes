@@ -396,6 +396,31 @@
                 }
             }, [darkMode]);
 
+            // Handle Supabase Auth Redirect (Email Confirmation)
+            useEffect(() => {
+                const hash = window.location.hash;
+                if (hash && hash.includes('access_token')) {
+                    const params = new URLSearchParams(hash.substring(1));
+                    const accessToken = params.get('access_token');
+                    if (accessToken) {
+                        const httpUrl = cloudUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+                        fetch(httpUrl + '/auth/user', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: accessToken })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.user) {
+                                setUserAccount(data.user);
+                                showNotification("Email verified! Logged in.");
+                                window.history.replaceState(null, null, ' ');
+                            }
+                        })
+                        .catch(e => console.error(e));
+                    }
+                }
+            }, [cloudUrl]);
+
             const flashNotifications = () => {
                 setShowNotifList(true);
                 if (notifListTimer.current) clearTimeout(notifListTimer.current);
