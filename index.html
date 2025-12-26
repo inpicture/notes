@@ -358,7 +358,7 @@
                 try { return JSON.parse(localStorage.getItem('leaf_cached_notes')) || []; } catch { return []; }
             });
 
-            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://YOUR-WORKER-SUBDOMAIN.workers.dev");
+            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const wsRef = useRef(null);
 
