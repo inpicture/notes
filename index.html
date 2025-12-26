@@ -269,12 +269,10 @@
         };
 
         const AuthModal = ({ onClose, onLogin, cloudUrl }) => {
-            const [mode, setMode] = useState('LOGIN'); // LOGIN, SIGNUP, FORGOT, RESET, CONFIRM
+            const [mode, setMode] = useState('LOGIN'); // LOGIN, SIGNUP, FORGOT
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [name, setName] = useState('');
-            const [resetToken, setResetToken] = useState('');
-            const [confirmToken, setConfirmToken] = useState('');
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
             const [msg, setMsg] = useState(null);
@@ -289,9 +287,7 @@
                     let body = { email, password };
                     
                     if (mode === 'SIGNUP') { endpoint = '/auth/signup'; body = { email, password, name }; }
-                    if (mode === 'CONFIRM') { endpoint = '/auth/confirm'; body = { email, token: confirmToken }; }
                     if (mode === 'FORGOT') { endpoint = '/auth/reset-request'; body = { email }; }
-                    if (mode === 'RESET') { endpoint = '/auth/reset-confirm'; body = { email, token: resetToken, newPassword: password }; }
 
                     const res = await fetch(httpUrl + endpoint, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -305,18 +301,15 @@
                     
                     if (!res.ok) throw new Error(data.error || "Request failed");
 
-                    if (mode === 'LOGIN' || mode === 'CONFIRM') {
+                    if (mode === 'LOGIN') {
                         onLogin(data.user);
                         onClose();
                     } else if (mode === 'SIGNUP') {
-                        setMsg(data.debug_token ? `(Email Config Missing) Dev Code: ${data.debug_token}` : `Confirmation code sent to ${email}!`);
-                        setMode('CONFIRM');
+                        setMsg(`Confirmation link sent to ${email}! Please check your inbox.`);
+                        setMode('LOGIN');
                     } else if (mode === 'FORGOT') {
-                        setMsg(data.debug_token ? `(Email Config Missing) Dev Code: ${data.debug_token}` : `Reset token sent to ${email}!`);
-                        setMode('RESET');
-                    } else if (mode === 'RESET') {
-                        setMsg("Password reset! Please login.");
-                        setTimeout(() => setMode('LOGIN'), 1500);
+                        setMsg(`Password reset link sent to ${email}!`);
+                        setMode('LOGIN');
                     }
                 } catch (err) { setError(err.message); }
                 setLoading(false);
@@ -326,24 +319,21 @@
                 <div className="absolute inset-0 z-[8000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
                     <div className="bg-white dark:bg-neutral-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-pop-in" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{mode === 'LOGIN' ? 'Welcome Back' : mode === 'SIGNUP' ? 'Create Account' : mode === 'CONFIRM' ? 'Confirm Email' : 'Reset Password'}</h2>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{mode === 'LOGIN' ? 'Welcome Back' : mode === 'SIGNUP' ? 'Create Account' : 'Reset Password'}</h2>
                             <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><IconX /></button>
                         </div>
                         {error && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg">{error}</div>}
                         {msg && <div className="mb-4 p-3 bg-emerald-50 text-emerald-600 text-xs rounded-lg break-all">{msg}</div>}
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             {mode === 'SIGNUP' && <input type="text" placeholder="Display Name" className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={name} onChange={e => setName(e.target.value)} required />}
-                            {(mode !== 'RESET' && mode !== 'CONFIRM') && <input type="email" placeholder="Email Address" className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={email} onChange={e => setEmail(e.target.value)} required />}
-                            {mode === 'RESET' && <input type="text" placeholder="Reset Token" className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={resetToken} onChange={e => setResetToken(e.target.value)} required />}
-                            {mode === 'CONFIRM' && <input type="text" placeholder="Confirmation Code" className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={confirmToken} onChange={e => setConfirmToken(e.target.value)} required />}
-                            {(mode !== 'FORGOT' && mode !== 'CONFIRM') && <input type="password" placeholder={mode === 'RESET' ? "New Password" : "Password"} className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={password} onChange={e => setPassword(e.target.value)} required />}
-                            <button disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-transform active:scale-95 disabled:opacity-50">{loading ? 'Processing...' : (mode === 'LOGIN' ? 'Login' : mode === 'SIGNUP' ? 'Sign Up' : mode === 'CONFIRM' ? 'Confirm' : 'Submit')}</button>
+                            <input type="email" placeholder="Email Address" className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={email} onChange={e => setEmail(e.target.value)} required />
+                            {mode !== 'FORGOT' && <input type="password" placeholder="Password" className="p-3 bg-slate-50 dark:bg-neutral-900 rounded-xl border border-slate-200 dark:border-neutral-700 outline-none focus:border-blue-500 dark:text-white" value={password} onChange={e => setPassword(e.target.value)} required />}
+                            <button disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-transform active:scale-95 disabled:opacity-50">{loading ? 'Processing...' : (mode === 'LOGIN' ? 'Login' : mode === 'SIGNUP' ? 'Sign Up Free' : 'Send Reset Link')}</button>
                         </form>
                         <div className="mt-4 text-center text-xs text-slate-500">
                             {mode === 'LOGIN' && <><span className="cursor-pointer hover:text-blue-500" onClick={() => setMode('FORGOT')}>Forgot Password?</span> • <span className="cursor-pointer hover:text-blue-500" onClick={() => setMode('SIGNUP')}>Create Account</span></>}
                             {mode === 'SIGNUP' && <span className="cursor-pointer hover:text-blue-500" onClick={() => setMode('LOGIN')}>Already have an account? Login</span>}
-                            {mode === 'CONFIRM' && <span className="cursor-pointer hover:text-blue-500" onClick={() => setMode('SIGNUP')}>Back to Signup</span>}
-                            {(mode === 'FORGOT' || mode === 'RESET') && <span className="cursor-pointer hover:text-blue-500" onClick={() => setMode('LOGIN')}>Back to Login</span>}
+                            {mode === 'FORGOT' && <span className="cursor-pointer hover:text-blue-500" onClick={() => setMode('LOGIN')}>Back to Login</span>}
                         </div>
                     </div>
                 </div>
