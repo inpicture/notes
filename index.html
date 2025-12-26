@@ -778,6 +778,12 @@
 
             const handleAuthSubmit = async () => {
                 if (!authInput.email || !authInput.password) return;
+                
+                if (cloudUrl.includes("YOUR-WORKER-SUBDOMAIN")) {
+                    showNotification("Please set your Server URL in Profile first!");
+                    return;
+                }
+
                 setAuthLoading(true);
                 
                 const httpUrl = cloudUrl.replace('wss://', 'https://');
