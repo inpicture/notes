@@ -358,7 +358,7 @@
                 try { return JSON.parse(localStorage.getItem('leaf_cached_notes')) || []; } catch { return []; }
             });
 
-            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
+            const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('leaf_cloud_url_v2') || "wss://leaf-notes-backend.thomasthanos111.workers.dev");
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const wsRef = useRef(null);
 
@@ -380,7 +380,7 @@
 
             useEffect(() => localStorage.setItem('leaf_cached_notes', JSON.stringify(notes)), [notes]);
             useEffect(() => localStorage.setItem('leaf_home_loc', JSON.stringify(homeLocation)), [homeLocation]);
-            useEffect(() => localStorage.setItem('leaf_cloud_url', cloudUrl), [cloudUrl]);
+            useEffect(() => localStorage.setItem('leaf_cloud_url_v2', cloudUrl), [cloudUrl]);
             useEffect(() => localStorage.setItem('leaf_user_account', JSON.stringify(userAccount)), [userAccount]);
             useEffect(() => localStorage.setItem('leaf_read_notes', JSON.stringify(readNotes)), [readNotes]);
             useEffect(() => localStorage.setItem('leaf_liked_notes', JSON.stringify(likedNotes)), [likedNotes]);
