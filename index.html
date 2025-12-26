@@ -16,8 +16,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="//unpkg.com/three"></script>
-    <script src="//unpkg.com/globe.gl"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
@@ -525,7 +523,6 @@
                     if (note) {
                         if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
                         mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
-                        mapRef.current.pointOfView({ lat: note.lat, lng: note.lng, altitude: 1.5 }, 2000);
                         setSelectedNote(note);
                     }
                     setPendingFocus(null);
@@ -544,7 +541,6 @@
                 } else {
                     if (mapRef.current) {
                         mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
-                        mapRef.current.pointOfView({ lat: note.lat, lng: note.lng, altitude: 1.5 }, 2000);
                     }
                     setSelectedNote(note);
                 }
@@ -559,7 +555,6 @@
             }, [notes, userId]);
 
             // Init Map
-            // Init Globe
             useEffect(() => {
                 if (view === 'GLOBE' && !mapRef.current) {
                     setTimeout(() => {
@@ -571,55 +566,22 @@
                         map.on('zoomend', () => setZoomLevel(map.getZoom()));
                         mapRef.current = map;
                         mapRef.current.layer = layer;
-                        const world = Globe()
-                            (document.getElementById('map-container'))
-                            .backgroundColor('rgba(0,0,0,0)')
-                            .showGlobe(false)
-                            .showAtmosphere(true)
-                            .atmosphereColor(darkMode ? '#3b82f6' : '#64748b')
-                            .atmosphereAltitude(0.15);
-
-                        // Fetch countries for line art
-                        fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
-                            .then(res => res.json())
-                            .then(data => {
-                                world.polygonsData(data.features)
-                                     .polygonCapColor(() => 'rgba(0,0,0,0)')
-                                     .polygonSideColor(() => 'rgba(0,0,0,0)')
-                                     .polygonStrokeColor(() => darkMode ? 'rgba(100, 200, 255, 0.3)' : 'rgba(20, 20, 20, 0.2)')
-                                     .polygonAltitude(0.005);
-                            });
-
-                        world.controls().autoRotate = true;
-                        world.controls().autoRotateSpeed = 0.5;
-                        world.controls().enableZoom = true;
-                        
-                        // Initial view
-                        world.pointOfView({ lat: homeLocation.lat, lng: homeLocation.lng, altitude: 2.0 });
-
-                        mapRef.current = world;
                         setMapReady(true);
                     }, 50);
                 }
             }, [view, darkMode]); // Re-init if dark mode changes (simple approach)
-            }, [view]);
 
             // Update tiles when dark mode changes without full re-init if possible
-            // Update Globe Appearance
             useEffect(() => {
                 if (mapRef.current && mapRef.current.layer) {
                     const tileUrl = darkMode 
                         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
                         : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
                     mapRef.current.layer.setUrl(tileUrl);
-                if (mapRef.current && mapRef.current.atmosphereColor) {
-                    mapRef.current.atmosphereColor(darkMode ? '#3b82f6' : '#64748b');
-                    mapRef.current.polygonStrokeColor(() => darkMode ? 'rgba(100, 200, 255, 0.3)' : 'rgba(20, 20, 20, 0.2)');
                 }
             }, [darkMode]);
 
             // Sync Markers (Only for Globe View)
-            // Sync Markers (Globe)
             useEffect(() => {
                 if (view === 'GLOBE' && mapRef.current) {
                     const map = mapRef.current;
@@ -688,32 +650,8 @@
                             markersRef.current[note.id] = marker;
                         }
                     });
-                    const world = mapRef.current;
-                    // Use htmlElementsData for markers
-                    world.htmlElementsData(visibleNotes)
-                        .htmlLat(d => d.lat)
-                        .htmlLng(d => d.lng)
-                        .htmlElement(d => {
-                            const el = document.createElement('div');
-                            const isRead = readNotes.includes(d.id);
-                            el.innerHTML = `<div class="note-marker ${isRead ? 'read' : ''}"></div>`;
-                            el.style.width = '0';
-                            el.style.height = '0';
-                            el.style.display = 'flex';
-                            el.style.alignItems = 'center';
-                            el.style.justifyContent = 'center';
-                            el.style.cursor = 'pointer';
-                            el.onclick = (e) => {
-                                e.stopPropagation();
-                                if (!readNotes.includes(d.id)) setReadNotes(prev => [...prev, d.id]);
-                                world.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.5 }, 1000);
-                                setSelectedNote(d);
-                            };
-                            return el;
-                        });
                 }
             }, [visibleNotes, view, mapReady, zoomLevel, readNotes]);
-            }, [visibleNotes, view, mapReady, readNotes]);
 
             useEffect(() => {
                 // Auto-delete fallen notes if I own them
@@ -831,17 +769,14 @@
                 
                 if (item.type === 'api') {
                     if (mapRef.current) mapRef.current.flyTo([item.lat, item.lng], 10, {duration: 2.2, easeLinearity: 0.2});
-                    if (mapRef.current) mapRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: 1.5 }, 2000);
                 } else {
                     const cityName = item.name;
                     if (CITIES[cityName] && mapRef.current) {
                         mapRef.current.flyTo(CITIES[cityName], 6, {duration: 2.2, easeLinearity: 0.2});
-                        mapRef.current.pointOfView({ lat: CITIES[cityName][0], lng: CITIES[cityName][1], altitude: 1.5 }, 2000);
                     } else {
                         const targetNote = notes.find(n => n.locationName === cityName);
                         if (targetNote && mapRef.current) {
                             mapRef.current.flyTo([targetNote.lat, targetNote.lng], 6, {duration: 2.2, easeLinearity: 0.2});
-                            mapRef.current.pointOfView({ lat: targetNote.lat, lng: targetNote.lng, altitude: 1.5 }, 2000);
                         }
                     }
                 }
