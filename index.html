@@ -268,14 +268,15 @@
             "Ho Chi Minh City, Vietnam": [10.8231, 106.6297], "Hanoi, Vietnam": [21.0285, 105.8542]
         };
 
-        const AuthModal = ({ onClose, onLogin, cloudUrl, initialMode='LOGIN', token=null }) => {
+        const AuthModal = ({ onClose, onLogin, cloudUrl, initialMode='LOGIN', token=null, initialEmail='' }) => {
             const [mode, setMode] = useState(initialMode); // LOGIN, SIGNUP, FORGOT, UPDATE_PASSWORD
-            const [email, setEmail] = useState('');
+            const [email, setEmail] = useState(initialEmail);
             const [password, setPassword] = useState('');
             const [name, setName] = useState('');
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
             const [msg, setMsg] = useState(null);
+            const backdropRef = useRef(false);
 
             const httpUrl = cloudUrl.replace('wss://', 'https://').replace('ws://', 'http://');
 
@@ -288,7 +289,12 @@
                     
                     if (mode === 'SIGNUP') { endpoint = '/auth/signup'; body = { email, password, name }; }
                     if (mode === 'FORGOT') { endpoint = '/auth/reset-request'; body = { email }; }
-                    if (mode === 'UPDATE_PASSWORD') { endpoint = '/auth/update-password'; body = { token, password }; }
+                    if (mode === 'UPDATE_PASSWORD') { 
+                        const actualToken = token || localStorage.getItem('leaf_session_token');
+                        if (!actualToken) throw new Error("Session expired. Please login again.");
+                        endpoint = '/auth/update-password'; 
+                        body = { token: actualToken, password }; 
+                    }
 
                     const res = await fetch(httpUrl + endpoint, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -320,7 +326,7 @@
             };
 
             return (
-                <div className="absolute inset-0 z-[8000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+                <div className="absolute inset-0 z-[8000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onMouseDown={e => { if(e.target === e.currentTarget) backdropRef.current = true; }} onClick={e => { if(e.target === e.currentTarget && backdropRef.current) onClose(); backdropRef.current = false; }}>
                     <div className="bg-white dark:bg-neutral-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-pop-in" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white">{mode === 'LOGIN' ? 'Welcome Back' : mode === 'SIGNUP' ? 'Create Account' : mode === 'UPDATE_PASSWORD' ? 'Set New Password' : 'Reset Password'}</h2>
@@ -910,6 +916,7 @@
             const handleLogout = () => {
                 setUserAccount(null);
                 setViewProfile(null);
+                localStorage.removeItem('leaf_session_token');
                 showNotification("Logged out");
             };
 
@@ -942,7 +949,7 @@
 
                     {notification && <div className="notification-toast">{notification}</div>}
 
-                    {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={(u, s) => { setUserAccount(u); if(s) localStorage.setItem('leaf_session_token', s.access_token); showNotification(`Welcome, ${u.name}!`); }} cloudUrl={cloudUrl} initialMode={authMode} token={localStorage.getItem('leaf_session_token')} />}
+                    {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={(u, s) => { setUserAccount(u); if(s) localStorage.setItem('leaf_session_token', s.access_token); showNotification(`Welcome, ${u.name}!`); }} cloudUrl={cloudUrl} initialMode={authMode} token={localStorage.getItem('leaf_session_token')} initialEmail={userAccount ? userAccount.email : ''} />}
 
                     {/* TOP BAR: Profile - Search - Notifications */}
                     <div className="absolute top-0 left-0 w-full flex items-center justify-between px-3 pt-4 z-[5000] pointer-events-none ui-layer">
@@ -1159,7 +1166,11 @@
                                 {viewProfile.isMe && userAccount && (
                                     <div className="w-full mb-4 flex items-center justify-between bg-white dark:bg-neutral-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
                                         <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-2"><IconLock size={14} /> Security</span>
-                                        <button onClick={() => { setViewProfile(null); setAuthMode('UPDATE_PASSWORD'); setShowAuth(true); }} className="text-xs font-bold text-blue-500 hover:underline">Change Password</button>
+                                        <button onClick={() => { 
+                                            setViewProfile(null); 
+                                            setAuthMode('FORGOT'); 
+                                            setShowAuth(true); 
+                                        }} className="text-xs font-bold text-blue-500 hover:underline">Reset Password</button>
                                     </div>
                                 )}
 
