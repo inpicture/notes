@@ -38,7 +38,7 @@
             opacity: 0; transition: opacity 1s ease;
         }
         body.dark .view-globe .globe-gradient-overlay {
-            opacity: 1;
+            opacity: 0;
             background: 
                 radial-gradient(circle at 20% 30%, rgba(34, 211, 238, 0.25), transparent 50%),
                 radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.25), transparent 50%),
@@ -118,6 +118,20 @@
         #map-container { position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; }
         .view-globe #map-container { opacity: 1; pointer-events: auto; }
 
+        .leaflet-container { background: transparent !important; }
+        .leaflet-tile-pane { transition: filter 0.5s ease; }
+        
+        /* Light Mode: Blue Lineart */
+        body:not(.dark) .leaflet-tile-pane {
+            mix-blend-mode: multiply;
+            filter: brightness(0.93) contrast(1.2) sepia(0.5) hue-rotate(190deg) saturate(3);
+        }
+        /* Dark Mode: Blue Lineart (Screen blends black tiles into background) */
+        body.dark .leaflet-tile-pane {
+            mix-blend-mode: screen;
+            filter: contrast(1.2) brightness(1.1) sepia(1) hue-rotate(190deg) saturate(2);
+        }
+
         .notification-toast {
             position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
             background: #0f172a; color: white; padding: 10px 20px; border-radius: 30px;
@@ -141,6 +155,23 @@
 
         .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: #f1f5f9; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); object-fit: cover; }
         .avatar-lg { width: 64px; height: 64px; font-size: 32px; border-width: 4px; }
+
+        .path-draw {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawPath 2s ease-out forwards;
+        }
+        @keyframes drawPath { to { stroke-dashoffset: 0; } }
+        [contentEditable]:empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            cursor: text;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .char-anim {
+            display: inline-block;
+            animation: fadeInUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
     </style>
 </head>
 <body>
@@ -173,6 +204,28 @@
         const IconMoon = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>;
         const IconBold = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>;
         const IconItalic = ({ size=20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="19" y1="4" x2="10" y2="4"></line><line x1="14" y1="20" x2="5" y2="20"></line><line x1="15" y1="4" x2="9" y2="20"></line></svg>;
+
+        const AnimatedIconHome = ({ size=20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path className="path-draw" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline className="path-draw" points="9 22 9 12 15 12 15 22" style={{animationDelay: '0.5s'}}></polyline>
+            </svg>
+        );
+        const AnimatedIconGlobe = ({ size=20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle className="path-draw" cx="12" cy="12" r="10"></circle>
+                <line className="path-draw" x1="2" y1="12" x2="22" y2="12" style={{animationDelay: '0.4s'}}></line>
+                <path className="path-draw" d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" style={{animationDelay: '0.8s'}}></path>
+            </svg>
+        );
+
+        const AnimatedText = ({ text }) => (
+            <span className="flex">
+                {text.split('').map((char, i) => (
+                    <span key={i} className="char-anim" style={{animationDelay: `${i * 0.03}s`}}>{char === ' ' ? '\u00A0' : char}</span>
+                ))}
+            </span>
+        );
 
         const CITIES = {
             // Countries
@@ -374,6 +427,35 @@
             const [pickerCoords, setPickerCoords] = useState(null);
             const pickerMapRef = useRef(null);
 
+            const [iconKeys, setIconKeys] = useState({ home: 0, globe: 0 });
+            const triggerAnim = (k) => setIconKeys(p => ({...p, [k]: p[k] + 1}));
+
+            const [placeholder, setPlaceholder] = useState("");
+            useEffect(() => {
+                const text = "Share your thoughts with the world!";
+                let charIdx = 0;
+                let timer;
+                
+                const type = () => {
+                    if (charIdx <= text.length) {
+                        setPlaceholder(text.substring(0, charIdx) + "|");
+                        charIdx++;
+                        timer = setTimeout(type, 50);
+                    } else {
+                        // Blink cursor
+                        let showCursor = true;
+                        const blink = () => {
+                            showCursor = !showCursor;
+                            setPlaceholder(text + (showCursor ? "|" : ""));
+                            timer = setTimeout(blink, 800);
+                        };
+                        blink();
+                    }
+                };
+                type();
+                return () => clearTimeout(timer);
+            }, []);
+
             const [darkMode, setDarkMode] = useState(() => {
                 try { return JSON.parse(localStorage.getItem('leaf_dark_mode')) || false; } catch { return false; }
             });
@@ -573,8 +655,9 @@
 
             // Init Map
             useEffect(() => {
-                if (view === 'GLOBE' && !mapRef.current) {
+                if (!mapRef.current) {
                     setTimeout(() => {
+                        if (!document.getElementById('map-container')) return;
                         const map = L.map('map-container', { zoomControl: false, attributionControl: false }).setView([homeLocation.lat, homeLocation.lng], 5);
                         const tileUrl = darkMode 
                             ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
@@ -584,9 +667,9 @@
                         mapRef.current = map;
                         mapRef.current.layer = layer;
                         setMapReady(true);
-                    }, 50);
+                    }, 100);
                 }
-            }, [view, darkMode]); // Re-init if dark mode changes (simple approach)
+            }, [darkMode]);
 
             // Update tiles when dark mode changes without full re-init if possible
             useEffect(() => {
@@ -944,9 +1027,6 @@
 
             return (
                 <div className={`relative w-screen h-[100dvh] overflow-hidden ${view === 'GLOBE' ? 'view-globe' : ''}`}>
-                    <div id="map-container"></div>
-                    <div className="globe-gradient-overlay"></div>
-
                     {notification && <div className="notification-toast">{notification}</div>}
 
                     {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={(u, s) => { setUserAccount(u); if(s) localStorage.setItem('leaf_session_token', s.access_token); showNotification(`Welcome, ${u.name}!`); }} cloudUrl={cloudUrl} initialMode={authMode} token={localStorage.getItem('leaf_session_token')} initialEmail={userAccount ? userAccount.email : ''} />}
@@ -956,15 +1036,15 @@
                         
                         {/* Profile (Left) */}
                         <div className="pointer-events-auto">
-                            <button onClick={() => openProfile(null)} className={`glass-panel p-2 rounded-full hover:scale-105 transition-transform flex items-center justify-center shadow-lg ${userAccount ? 'text-emerald-600' : 'text-slate-600'}`}>
-                                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-lg border-2 border-white shadow-sm">{userAccount ? userAccount.avatar : <IconUser size={18} />}</div>
+                            <button onClick={() => openProfile(null)} className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-all ${userAccount ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-200'}`}>
+                                {userAccount ? <div className="text-xl">{userAccount.avatar}</div> : <IconUser size={24} />}
                             </button>
                         </div>
 
                         {/* Search (Center) */}
                         {view === 'GLOBE' && (
                             <div className="flex-1 mx-2 max-w-md pointer-events-auto relative group">
-                                <input type="text" placeholder="Search" className="glass-panel !bg-white dark:!bg-neutral-900/80 backdrop-blur-xl text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-10 pr-4 py-2.5 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg text-sm" value={search} onChange={handleSearchChange} onFocus={handleSearchFocus} />
+                                <input type="text" placeholder="Search" className="bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10 text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-10 pr-4 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg text-sm" value={search} onChange={handleSearchChange} onFocus={handleSearchFocus} />
                                 <div className="absolute inset-y-0 left-3 flex items-center text-slate-500"><IconSearch /></div>
                                 {searchSuggestions.length > 0 && (
                                     <div className="suggestions-list" style={{top: '120%'}}>
@@ -976,16 +1056,18 @@
 
                         {/* Notification (Right) */}
                         <div className="pointer-events-auto relative">
-                            <button onClick={() => { setShowNotifList(!showNotifList); if(notifListTimer.current) clearTimeout(notifListTimer.current); }} className="glass-panel p-3 rounded-full hover:scale-105 transition-transform relative text-slate-600 shadow-lg">
-                                <IconBell />
+                            <button onClick={() => { setShowNotifList(!showNotifList); if(notifListTimer.current) clearTimeout(notifListTimer.current); }} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-all relative text-slate-600 dark:text-slate-200">
+                                <IconBell size={24} />
                                 {notifications.some(n => !n.read) && <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-white"></div>}
                             </button>
                         </div>
                     </div>
 
-                    {/* FEED VIEW */}
-                    {view === 'HOME' && (
-                        <div className="absolute inset-0 pt-20 overflow-y-auto z-[1000] pointer-events-auto">
+                    {/* SWIPE CONTAINER */}
+                    <div className="absolute inset-0 flex transition-transform duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]" style={{ transform: view === 'HOME' ? 'translateX(0)' : 'translateX(-50%)', width: '200vw' }}>
+                        
+                        {/* HOME PANE (Left) */}
+                        <div className={`w-screen h-full relative overflow-y-auto pt-20 transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${view === 'HOME' ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-xl scale-90'}`}>
                             <div className="max-w-xl mx-auto px-4 pb-32">
                                 
                                 {/* INPUT CARD */}
@@ -1021,8 +1103,8 @@
                                         <div 
                                             ref={editorRef}
                                             contentEditable
-                                            className="min-h-[100px] outline-none text-slate-700 dark:text-slate-200 text-base leading-relaxed placeholder-slate-400"
-                                            placeholder="What's happening?"
+                                            className="min-h-[100px] outline-none text-slate-700 dark:text-slate-200 text-base leading-relaxed"
+                                            placeholder={placeholder}
                                         />
                                         <div className="flex justify-end items-center mt-4">
                                             <button 
@@ -1036,7 +1118,13 @@
                                 </div>
                             </div>
                         </div>
-                    )}
+
+                        {/* GLOBE PANE (Right) */}
+                        <div className={`w-screen h-full relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${view === 'GLOBE' ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-xl scale-90'}`}>
+                            <div id="map-container" className="w-full h-full"></div>
+                            <div className="globe-gradient-overlay"></div>
+                        </div>
+                    </div>
 
                     <div 
                         className={`absolute top-20 right-4 z-[5000] pointer-events-auto transition-all duration-300 origin-top-right ${showNotifList ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
@@ -1066,9 +1154,15 @@
                     </div>
 
                     <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[5000] pointer-events-auto">
-                        <div className="glass-panel rounded-full p-1.5 flex gap-1 shadow-2xl">
-                            <button onClick={() => setView('HOME')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'HOME' ? 'toggle-active' : 'toggle-inactive'}`}><IconGrid /> Home</button>
-                            <button onClick={() => setView('GLOBE')} className={`flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide toggle-btn ${view === 'GLOBE' ? 'toggle-active' : 'toggle-inactive'}`}><IconGlobe /> Public</button>
+                        <div className="rounded-full p-1.5 flex relative shadow-2xl w-64 bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10">
+                            <div className={`absolute top-1.5 bottom-1.5 rounded-full bg-white/40 dark:bg-white/10 backdrop-blur-md shadow-sm transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${view === 'HOME' ? 'left-1.5 w-[calc(50%-6px)]' : 'left-[50%] w-[calc(50%-6px)]'}`}></div>
+                            
+                            <button onClick={() => { setView('HOME'); triggerAnim('home'); }} className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors duration-300 ${view === 'HOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                                <AnimatedIconHome key={`icon-home-${iconKeys.home}`} /> <AnimatedText key={`text-home-${iconKeys.home}`} text="Home" />
+                            </button>
+                            <button onClick={() => { setView('GLOBE'); triggerAnim('globe'); }} className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors duration-300 ${view === 'GLOBE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                                <AnimatedIconGlobe key={`icon-globe-${iconKeys.globe}`} /> <AnimatedText key={`text-globe-${iconKeys.globe}`} text="Public" />
+                            </button>
                         </div>
                     </div>
 
