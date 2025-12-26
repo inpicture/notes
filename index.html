@@ -309,10 +309,10 @@
                         onLogin(data.user);
                         onClose();
                     } else if (mode === 'SIGNUP') {
-                        setMsg(`Confirmation code sent! (Dev: ${data.debug_token})`);
+                        setMsg(data.debug_token ? `Dev Mode: Code is ${data.debug_token}` : `Confirmation code sent to ${email}!`);
                         setMode('CONFIRM');
                     } else if (mode === 'FORGOT') {
-                        setMsg(`Reset token sent! (Dev: ${data.debug_token})`);
+                        setMsg(data.debug_token ? `Dev Mode: Code is ${data.debug_token}` : `Reset token sent to ${email}!`);
                         setMode('RESET');
                     } else if (mode === 'RESET') {
                         setMsg("Password reset! Please login.");
