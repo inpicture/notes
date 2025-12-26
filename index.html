@@ -413,7 +413,7 @@
                             if (data.user) {
                                 setUserAccount(data.user);
                                 showNotification("Email verified! Logged in.");
-                                window.history.replaceState(null, null, ' ');
+                                window.history.replaceState(null, null, window.location.pathname);
                             }
                         })
                         .catch(e => console.error(e));
