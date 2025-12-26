@@ -661,21 +661,25 @@
             }, [notes]);
 
             const createNote = (content) => {
-                if (!userAccount) {
-                    setShowAuth(true);
-                    return;
-                }
-
                 const finalLat = homeLocation.lat + (Math.random() * 0.05); 
                 const finalLng = homeLocation.lng + (Math.random() * 0.05);
                 const locName = homeLocation.name;
+
+                let authorName = "Anonymous";
+                if (userAccount) {
+                    authorName = userAccount.name;
+                } else if (homeLocation && homeLocation.name) {
+                    const parts = homeLocation.name.split(',');
+                    const country = parts[parts.length - 1].trim();
+                    if (country) authorName = `${country}ian`;
+                }
 
                 const newNote = {
                     id: Date.now(),
                     ownerId: userId, // Mark as mine
                     content: content,
                     lat: finalLat, lng: finalLng, locationName: locName,
-                    authorName: userAccount ? userAccount.name : "Anonymous",
+                    authorName: authorName,
                     authorAvatar: userAccount ? userAccount.avatar : "👤",
                     published: true, reports: 0, likes: 0
                 };
@@ -900,12 +904,21 @@
 
             const openProfile = (note) => {
                 const isMe = note ? note.ownerId === userId : true;
-                if (isMe && !userAccount) { setShowAuth(true); return; }
+
+                let guestName = 'Guest';
+                if (!userAccount && homeLocation && homeLocation.name) {
+                    const parts = homeLocation.name.split(',');
+                    const country = parts[parts.length - 1].trim();
+                    if (country) guestName = `${country}ian`;
+                }
 
                 const profileData = note ? {
                     id: note.ownerId, name: note.authorName || "Anonymous", avatar: note.authorAvatar || "👤", isMe
                 } : {
-                    id: userAccount.id, name: userAccount.name, avatar: userAccount.avatar, isMe: true
+                    id: userAccount ? userAccount.id : 'guest', 
+                    name: userAccount ? userAccount.name : guestName, 
+                    avatar: userAccount ? userAccount.avatar : <IconUser size={32} />, 
+                    isMe: true
                 };
                 setViewProfile(profileData);
                 setProfileTab('NOTES');
@@ -1059,10 +1072,6 @@
                                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
                                     <span className="text-xs text-slate-400">{new Date(selectedNote.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                     <div className="flex gap-2">
-                                        <button onClick={() => toggleLikeNote(selectedNote.id)} className={`flex items-center gap-1 text-xs font-bold transition-colors ${likedNotes.includes(selectedNote.id) ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'}`}>
-                                            <IconHeart size={16} fill={likedNotes.includes(selectedNote.id)} />
-                                            {selectedNote.likes || 0}
-                                        </button>
                                         <button onClick={() => toggleSaveNote(selectedNote.id)} className={`text-slate-400 hover:text-emerald-500 ${userAccount && userAccount.saved && userAccount.saved.includes(selectedNote.id) ? 'text-emerald-500' : ''}`}>
                                             <IconBookmark size={16} fill={userAccount && userAccount.saved && userAccount.saved.includes(selectedNote.id)} />
                                         </button>
@@ -1099,9 +1108,12 @@
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2 mb-4">
-                                        <h2 className="text-xl font-bold text-slate-800">{viewProfile.name}</h2>
-                                        {viewProfile.isMe && <button onClick={() => { setIsEditingName(true); setEditNameInput(viewProfile.name); }} className="text-slate-400 hover:text-emerald-600"><IconPen size={14} /></button>}
-                                        {viewProfile.isMe && <button onClick={handleLogout} className="ml-2 text-rose-400 hover:text-rose-600" title="Logout"><IconLogout size={16} /></button>}
+                                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{viewProfile.name}</h2>
+                                        {viewProfile.isMe && userAccount && <button onClick={() => { setIsEditingName(true); setEditNameInput(viewProfile.name); }} className="text-slate-400 hover:text-emerald-600"><IconPen size={14} /></button>}
+                                        {viewProfile.isMe && (userAccount ? 
+                                            <button onClick={handleLogout} className="ml-2 text-rose-400 hover:text-rose-600" title="Logout"><IconLogout size={16} /></button> :
+                                            <button onClick={() => { setViewProfile(null); setShowAuth(true); }} className="ml-2 text-emerald-500 hover:text-emerald-600 text-xs font-bold">Login</button>
+                                        )}
                                     </div>
                                 )}
                                 
@@ -1123,16 +1135,6 @@
                                                 )}
                                             </div>
                                         )}
-                                    </div>
-                                )}
-
-                                {viewProfile.isMe && (
-                                    <div className="w-full mb-4 bg-white dark:bg-neutral-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Server Connection</span>
-                                            <div className={`w-2 h-2 rounded-full ${isCloudConnected ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                                        </div>
-                                        <input type="text" className="w-full bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 rounded px-2 py-1 text-xs text-slate-600 dark:text-slate-300 outline-none focus:border-emerald-500 font-mono" value={cloudUrl} onChange={e => setCloudUrl(e.target.value)} placeholder="wss://..." />
                                     </div>
                                 )}
 
