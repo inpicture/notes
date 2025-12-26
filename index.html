@@ -16,6 +16,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="//unpkg.com/three"></script>
     <script src="//unpkg.com/globe.gl"></script>
 
     <style>
@@ -523,7 +524,8 @@
                     const note = notes.find(n => n.id === pendingFocus);
                     if (note) {
                         if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
-                        mapRef.current.pointOfView({ lat: note.lat, lng: note.lng, altitude: 0.5 }, 2000);
+                        mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
+                        mapRef.current.pointOfView({ lat: note.lat, lng: note.lng, altitude: 1.5 }, 2000);
                         setSelectedNote(note);
                     }
                     setPendingFocus(null);
@@ -541,7 +543,8 @@
                     setView('GLOBE');
                 } else {
                     if (mapRef.current) {
-                        mapRef.current.pointOfView({ lat: note.lat, lng: note.lng, altitude: 0.5 }, 2000);
+                        mapRef.current.flyTo([note.lat, note.lng], 8, { duration: 2.2, easeLinearity: 0.2 });
+                        mapRef.current.pointOfView({ lat: note.lat, lng: note.lng, altitude: 1.5 }, 2000);
                     }
                     setSelectedNote(note);
                 }
@@ -556,39 +559,77 @@
             }, [notes, userId]);
 
             // Init Map
+            // Init Globe
             useEffect(() => {
                 if (view === 'GLOBE' && !mapRef.current) {
                     setTimeout(() => {
+                        const map = L.map('map-container', { zoomControl: false, attributionControl: false }).setView([homeLocation.lat, homeLocation.lng], 5);
+                        const tileUrl = darkMode 
+                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+                            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+                        const layer = L.tileLayer(tileUrl, { noWrap: true }).addTo(map);
+                        map.on('zoomend', () => setZoomLevel(map.getZoom()));
+                        mapRef.current = map;
+                        mapRef.current.layer = layer;
                         const world = Globe()
                             (document.getElementById('map-container'))
-                            .globeImageUrl(darkMode ? '//unpkg.com/three-globe/example/img/earth-dark.jpg' : '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-                            .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-                            .backgroundImageUrl(darkMode ? '//unpkg.com/three-globe/example/img/night-sky.png' : '//unpkg.com/three-globe/example/img/night-sky.png')
+                            .backgroundColor('rgba(0,0,0,0)')
+                            .showGlobe(false)
                             .showAtmosphere(true)
-                            .atmosphereColor(darkMode ? '#3b82f6' : '#3b82f6')
+                            .atmosphereColor(darkMode ? '#3b82f6' : '#64748b')
                             .atmosphereAltitude(0.15);
-                        
+
+                        // Fetch countries for line art
+                        fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+                            .then(res => res.json())
+                            .then(data => {
+                                world.polygonsData(data.features)
+                                     .polygonCapColor(() => 'rgba(0,0,0,0)')
+                                     .polygonSideColor(() => 'rgba(0,0,0,0)')
+                                     .polygonStrokeColor(() => darkMode ? 'rgba(100, 200, 255, 0.3)' : 'rgba(20, 20, 20, 0.2)')
+                                     .polygonAltitude(0.005);
+                            });
+
                         world.controls().autoRotate = true;
-                        world.controls().autoRotateSpeed = 0.3;
-                        world.pointOfView({ lat: homeLocation.lat, lng: homeLocation.lng, altitude: 2.0 });
+                        world.controls().autoRotateSpeed = 0.5;
+                        world.controls().enableZoom = true;
                         
+                        // Initial view
+                        world.pointOfView({ lat: homeLocation.lat, lng: homeLocation.lng, altitude: 2.0 });
+
                         mapRef.current = world;
                         setMapReady(true);
                     }, 50);
                 }
             }, [view, darkMode]); // Re-init if dark mode changes (simple approach)
+            }, [view]);
 
             // Update tiles when dark mode changes without full re-init if possible
+            // Update Globe Appearance
             useEffect(() => {
-                if (mapRef.current && typeof mapRef.current.globeImageUrl === 'function') {
-                    mapRef.current.globeImageUrl(darkMode ? '//unpkg.com/three-globe/example/img/earth-dark.jpg' : '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+                if (mapRef.current && mapRef.current.layer) {
+                    const tileUrl = darkMode 
+                        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+                        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+                    mapRef.current.layer.setUrl(tileUrl);
+                if (mapRef.current && mapRef.current.atmosphereColor) {
+                    mapRef.current.atmosphereColor(darkMode ? '#3b82f6' : '#64748b');
+                    mapRef.current.polygonStrokeColor(() => darkMode ? 'rgba(100, 200, 255, 0.3)' : 'rgba(20, 20, 20, 0.2)');
                 }
             }, [darkMode]);
 
             // Sync Markers (Only for Globe View)
+            // Sync Markers (Globe)
             useEffect(() => {
                 if (view === 'GLOBE' && mapRef.current) {
                     const map = mapRef.current;
+                    const validMarkerIds = new Set();
+                    
+                    // Clear old markers not in use (simple approach: clear all and redraw for clustering simplicity or track them)
+                    // For clustering, it's easier to clear layer group. But we have markersRef.
+                    // Let's do a full redraw strategy for simplicity when clustering changes.
+                    Object.values(markersRef.current).forEach(m => m.remove());
+                    markersRef.current = {};
 
                     const toRender = [];
                     visibleNotes.forEach(note => {
@@ -598,7 +639,7 @@
                     // Clustering Logic
                     const clusters = [];
                     const processed = new Set();
-                    const CLUSTER_RADIUS = 1.5; // Degrees (Simplified for Globe)
+                    const CLUSTER_RADIUS = zoomLevel < 9 ? 1.5 : 0.0001; // Degrees
 
                     toRender.forEach(note => {
                         if (processed.has(note.id)) return;
@@ -606,61 +647,73 @@
                         const cluster = [note];
                         processed.add(note.id);
 
-                        toRender.forEach(other => {
-                            if (!processed.has(other.id)) {
-                                const d = Math.sqrt(Math.pow(note.lat - other.lat, 2) + Math.pow(note.lng - other.lng, 2));
-                                if (d < CLUSTER_RADIUS) {
-                                    cluster.push(other);
-                                    processed.add(other.id);
+                        if (zoomLevel < 9) {
+                            toRender.forEach(other => {
+                                if (!processed.has(other.id)) {
+                                    const d = Math.sqrt(Math.pow(note.lat - other.lat, 2) + Math.pow(note.lng - other.lng, 2));
+                                    if (d < CLUSTER_RADIUS) {
+                                        cluster.push(other);
+                                        processed.add(other.id);
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                         clusters.push(cluster);
                     });
-
-                    const elementsData = [];
 
                     clusters.forEach(cluster => {
                         if (cluster.length > 1) {
                             // Render Cluster
                             const lat = cluster.reduce((sum, n) => sum + n.lat, 0) / cluster.length;
                             const lng = cluster.reduce((sum, n) => sum + n.lng, 0) / cluster.length;
-                            elementsData.push({ lat, lng, size: 30, cluster: true, count: cluster.length, notes: cluster });
+                            const hasUnread = cluster.some(n => !readNotes.includes(n.id));
+                            const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="cluster-marker" style="width:30px;height:30px;">${cluster.length}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+                            const marker = L.marker([lat, lng], { icon }).addTo(map);
+                            marker.on('click', () => {
+                                const bounds = L.latLngBounds(cluster.map(n => [n.lat, n.lng]));
+                                map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12, duration: 1.8, easeLinearity: 0.2 });
+                            });
+                            markersRef.current[`c_${lat}_${lng}`] = marker;
                         } else {
                             // Render Single
                             const note = cluster[0];
-                            elementsData.push({ lat: note.lat, lng: note.lng, size: 14, cluster: false, note: note });
+                            const isRead = readNotes.includes(note.id);
+                            const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="note-marker ${isRead ? 'read' : ''}"></div>`, iconSize: [14, 14], iconAnchor: [7, 7] });
+                            const marker = L.marker([note.lat, note.lng], { icon }).addTo(map);
+                            marker.on('click', () => {
+                                if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
+                                map.flyTo([note.lat, note.lng], Math.max(map.getZoom(), 8), { duration: 2.2, easeLinearity: 0.2 });
+                                setSelectedNote(note);
+                            });
+                            markersRef.current[note.id] = marker;
                         }
                     });
-
-                    map.htmlElementsData(elementsData)
+                    const world = mapRef.current;
+                    // Use htmlElementsData for markers
+                    world.htmlElementsData(visibleNotes)
                         .htmlLat(d => d.lat)
                         .htmlLng(d => d.lng)
                         .htmlElement(d => {
                             const el = document.createElement('div');
-                            if (d.cluster) {
-                                el.className = 'cluster-marker';
-                                el.style.width = `${d.size}px`;
-                                el.style.height = `${d.size}px`;
-                                el.innerHTML = d.count;
-                                el.onclick = () => {
-                                    map.pointOfView({ lat: d.lat, lng: d.lng, altitude: 0.8 }, 1000);
-                                };
-                            } else {
-                                const isRead = readNotes.includes(d.note.id);
-                                el.className = `note-marker ${isRead ? 'read' : ''}`;
-                                el.style.width = `${d.size}px`;
-                                el.style.height = `${d.size}px`;
-                                el.onclick = () => {
-                                    if (!readNotes.includes(d.note.id)) setReadNotes(prev => [...prev, d.note.id]);
-                                    map.pointOfView({ lat: d.lat, lng: d.lng, altitude: 0.5 }, 1500);
-                                    setSelectedNote(d.note);
-                                };
-                            }
+                            const isRead = readNotes.includes(d.id);
+                            el.innerHTML = `<div class="note-marker ${isRead ? 'read' : ''}"></div>`;
+                            el.style.width = '0';
+                            el.style.height = '0';
+                            el.style.display = 'flex';
+                            el.style.alignItems = 'center';
+                            el.style.justifyContent = 'center';
+                            el.style.cursor = 'pointer';
+                            el.onclick = (e) => {
+                                e.stopPropagation();
+                                if (!readNotes.includes(d.id)) setReadNotes(prev => [...prev, d.id]);
+                                world.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.5 }, 1000);
+                                setSelectedNote(d);
+                            };
                             return el;
                         });
                 }
             }, [visibleNotes, view, mapReady, zoomLevel, readNotes]);
+            }, [visibleNotes, view, mapReady, readNotes]);
 
             useEffect(() => {
                 // Auto-delete fallen notes if I own them
@@ -777,15 +830,18 @@
                 setSearch(item.name); setSearchSuggestions([]); setView('GLOBE');
                 
                 if (item.type === 'api') {
-                    if (mapRef.current) mapRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: 0.8 }, 2000);
+                    if (mapRef.current) mapRef.current.flyTo([item.lat, item.lng], 10, {duration: 2.2, easeLinearity: 0.2});
+                    if (mapRef.current) mapRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: 1.5 }, 2000);
                 } else {
                     const cityName = item.name;
                     if (CITIES[cityName] && mapRef.current) {
-                        mapRef.current.pointOfView({ lat: CITIES[cityName][0], lng: CITIES[cityName][1], altitude: 0.8 }, 2000);
+                        mapRef.current.flyTo(CITIES[cityName], 6, {duration: 2.2, easeLinearity: 0.2});
+                        mapRef.current.pointOfView({ lat: CITIES[cityName][0], lng: CITIES[cityName][1], altitude: 1.5 }, 2000);
                     } else {
                         const targetNote = notes.find(n => n.locationName === cityName);
                         if (targetNote && mapRef.current) {
-                            mapRef.current.pointOfView({ lat: targetNote.lat, lng: targetNote.lng, altitude: 0.8 }, 2000);
+                            mapRef.current.flyTo([targetNote.lat, targetNote.lng], 6, {duration: 2.2, easeLinearity: 0.2});
+                            mapRef.current.pointOfView({ lat: targetNote.lat, lng: targetNote.lng, altitude: 1.5 }, 2000);
                         }
                     }
                 }
