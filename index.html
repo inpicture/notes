@@ -27,6 +27,14 @@
             overflow-x: hidden;
         }
 
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; margin-block: 40px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.35); }
+        body.dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
+        body.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+
         /* --- DARK MODE --- */
         body.dark { background: #1a1a1a; color: #e2e8f0; }
         body.dark .glass-panel { background: rgba(40, 40, 40, 0.7); border-color: rgba(255,255,255,0.1); }
@@ -94,13 +102,24 @@
 
         .suggestions-list {
             position: absolute; top: 110%; left: 0; width: 100%;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            overflow: hidden; max-height: 200px; overflow-y: auto; z-index: 6000;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden; max-height: 300px; overflow-y: auto; z-index: 6000;
+            animation: menuSlide 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            transform-origin: top center;
         }
-        .suggestion-item { padding: 10px 16px; cursor: pointer; font-size: 13px; color: #475569; transition: background 0.1s; }
-        .suggestion-item:hover { background: #f1f5f9; color: #0f172a; }
+        body.dark .suggestions-list { background: rgba(0, 0, 0, 0.3); border-color: rgba(255,255,255,0.1); }
+        @keyframes menuSlide {
+            from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .suggestion-item { padding: 10px 16px; cursor: pointer; font-size: 13px; color: #334155; font-weight: 500; transition: background 0.2s; }
+        .suggestion-item:hover { background: rgba(255, 255, 255, 0.25); color: #0f172a; }
+        body.dark .suggestion-item { color: #e2e8f0; }
+        body.dark .suggestion-item:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
         .note-marker {
             background: #10b981; border: 2px solid white; border-radius: 50%;
@@ -427,9 +446,24 @@
             const [showLocationPicker, setShowLocationPicker] = useState(false);
             const [pickerCoords, setPickerCoords] = useState(null);
             const pickerMapRef = useRef(null);
+            const searchContainerRef = useRef(null);
 
             const [iconKeys, setIconKeys] = useState({ home: 0, globe: 0 });
             const triggerAnim = (k) => setIconKeys(p => ({...p, [k]: p[k] + 1}));
+
+            useEffect(() => {
+                const handleClickOutside = (e) => {
+                    if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                        setSearchSuggestions(prev => prev.length > 0 ? [] : prev);
+                    }
+                };
+                document.addEventListener('mousedown', handleClickOutside, true);
+                document.addEventListener('touchstart', handleClickOutside, true);
+                return () => {
+                    document.removeEventListener('mousedown', handleClickOutside, true);
+                    document.removeEventListener('touchstart', handleClickOutside, true);
+                };
+            }, []);
 
             const [placeholder, setPlaceholder] = useState("");
             useEffect(() => {
@@ -659,7 +693,14 @@
                 if (!mapRef.current) {
                     setTimeout(() => {
                         if (!document.getElementById('map-container')) return;
-                        const map = L.map('map-container', { zoomControl: false, attributionControl: false }).setView([homeLocation.lat, homeLocation.lng], 5);
+                        const map = L.map('map-container', { 
+                            zoomControl: false, 
+                            attributionControl: false, 
+                            worldCopyJump: false, 
+                            minZoom: 2,
+                            maxBounds: [[-85, -Infinity], [85, Infinity]],
+                            maxBoundsViscosity: 1.0
+                        }).setView([homeLocation.lat, homeLocation.lng], 5);
                         const tileUrl = darkMode 
                             ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
                             : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
@@ -725,31 +766,34 @@
                     });
 
                     clusters.forEach(cluster => {
-                        if (cluster.length > 1) {
-                            // Render Cluster
-                            const lat = cluster.reduce((sum, n) => sum + n.lat, 0) / cluster.length;
-                            const lng = cluster.reduce((sum, n) => sum + n.lng, 0) / cluster.length;
-                            const hasUnread = cluster.some(n => !readNotes.includes(n.id));
-                            const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="cluster-marker" style="width:30px;height:30px;">${cluster.length}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
-                            const marker = L.marker([lat, lng], { icon }).addTo(map);
-                            marker.on('click', () => {
-                                const bounds = L.latLngBounds(cluster.map(n => [n.lat, n.lng]));
-                                map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12, duration: 1.8, easeLinearity: 0.2 });
-                            });
-                            markersRef.current[`c_${lat}_${lng}`] = marker;
-                        } else {
-                            // Render Single
-                            const note = cluster[0];
-                            const isRead = readNotes.includes(note.id);
-                            const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="note-marker ${isRead ? 'read' : ''}"></div>`, iconSize: [14, 14], iconAnchor: [7, 7] });
-                            const marker = L.marker([note.lat, note.lng], { icon }).addTo(map);
-                            marker.on('click', () => {
-                                if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
-                                map.flyTo([note.lat, note.lng], Math.max(map.getZoom(), 8), { duration: 2.2, easeLinearity: 0.2 });
-                                setSelectedNote(note);
-                            });
-                            markersRef.current[note.id] = marker;
-                        }
+                        // Render markers for current world and neighbors (left/right) for infinite scroll effect
+                        [-1, 0, 1].forEach(worldIdx => {
+                            const offset = worldIdx * 360;
+                            if (cluster.length > 1) {
+                                // Render Cluster
+                                const lat = cluster.reduce((sum, n) => sum + n.lat, 0) / cluster.length;
+                                const lng = (cluster.reduce((sum, n) => sum + n.lng, 0) / cluster.length) + offset;
+                                const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="cluster-marker" style="width:30px;height:30px;">${cluster.length}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+                                const marker = L.marker([lat, lng], { icon }).addTo(map);
+                                marker.on('click', () => {
+                                    const bounds = L.latLngBounds(cluster.map(n => [n.lat, n.lng + offset]));
+                                    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12, duration: 1.8, easeLinearity: 0.2 });
+                                });
+                                markersRef.current[`c_${lat}_${lng}_${worldIdx}`] = marker;
+                            } else {
+                                // Render Single
+                                const note = cluster[0];
+                                const isRead = readNotes.includes(note.id);
+                                const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="note-marker ${isRead ? 'read' : ''}"></div>`, iconSize: [14, 14], iconAnchor: [7, 7] });
+                                const marker = L.marker([note.lat, note.lng + offset], { icon }).addTo(map);
+                                marker.on('click', () => {
+                                    if (!readNotes.includes(note.id)) setReadNotes(prev => [...prev, note.id]);
+                                    map.flyTo([note.lat, note.lng + offset], Math.max(map.getZoom(), 8), { duration: 2.2, easeLinearity: 0.2 });
+                                    setSelectedNote(note);
+                                });
+                                markersRef.current[`${note.id}_${worldIdx}`] = marker;
+                            }
+                        });
                     });
                 }
             }, [visibleNotes, view, mapReady, zoomLevel, readNotes]);
@@ -930,7 +974,8 @@
                         });
 
                         pickerMapRef.current = map;
-                    }, 100);
+                        setTimeout(() => map.invalidateSize(), 50);
+                    }, 500);
                 } else {
                     if (pickerMapRef.current) {
                         pickerMapRef.current.remove();
@@ -1044,7 +1089,7 @@
 
                         {/* Search (Center) */}
                         {view === 'GLOBE' && (
-                            <div className="flex-1 mx-2 max-w-md pointer-events-auto relative group">
+                            <div ref={searchContainerRef} className="flex-1 mx-2 max-w-md pointer-events-auto relative group search-container">
                                 <input type="text" placeholder="Search" className="bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10 text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-10 pr-4 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 shadow-2xl text-sm" value={search} onChange={handleSearchChange} onFocus={handleSearchFocus} />
                                 <div className="absolute inset-y-0 left-3 flex items-center text-slate-500"><IconSearch /></div>
                                 {searchSuggestions.length > 0 && (
@@ -1076,7 +1121,7 @@
                                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 opacity-40 blur-md animate-gradient-border rounded-[28px]"></div>
                                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 opacity-20 animate-gradient-border rounded-[28px]"></div>
                                     
-                                    <div className="relative note-card rounded-[26px] p-5 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-xl">
+                                    <div className="relative note-card rounded-[26px] p-5 !bg-white dark:!bg-[#1a1a1a]">
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="relative z-10">
                                                 {!isSettingHome ? (
@@ -1095,7 +1140,7 @@
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <button onMouseDown={(e) => { e.preventDefault(); setShowLocationPicker(true); }} className="p-2 bg-slate-100 dark:bg-neutral-700 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-500 hover:text-blue-500 transition-colors" title="Pick on Map"><IconGlobe size={18} /></button>
+                                                        <button onClick={() => { setShowLocationPicker(true); if(document.activeElement) document.activeElement.blur(); }} className="p-2 bg-slate-100 dark:bg-neutral-700 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-500 hover:text-blue-500 transition-colors" title="Pick on Map"><IconGlobe size={18} /></button>
                                                     </div>
                                                 )}
                                             </div>
