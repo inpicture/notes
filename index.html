@@ -117,6 +117,7 @@
         
         #map-container { position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; }
         .view-globe #map-container { opacity: 1; pointer-events: auto; }
+        body:not(.dark) #map-container { background: #f0fdf4; }
 
         .leaflet-container { background: transparent !important; }
         .leaflet-tile-pane { transition: filter 0.5s ease; }
@@ -124,7 +125,7 @@
         /* Light Mode: Blue Lineart */
         body:not(.dark) .leaflet-tile-pane {
             mix-blend-mode: multiply;
-            filter: brightness(0.93) contrast(1.2) sepia(0.5) hue-rotate(190deg) saturate(3);
+            filter: brightness(0.9) contrast(1.4) sepia(0.5) hue-rotate(170deg) saturate(3);
         }
         /* Dark Mode: Blue Lineart (Screen blends black tiles into background) */
         body.dark .leaflet-tile-pane {
@@ -662,7 +663,7 @@
                         const tileUrl = darkMode 
                             ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
                             : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-                        const layer = L.tileLayer(tileUrl, { noWrap: true }).addTo(map);
+                        const layer = L.tileLayer(tileUrl, { noWrap: false }).addTo(map);
                         map.on('zoomend', () => setZoomLevel(map.getZoom()));
                         mapRef.current = map;
                         mapRef.current.layer = layer;
@@ -1044,7 +1045,7 @@
                         {/* Search (Center) */}
                         {view === 'GLOBE' && (
                             <div className="flex-1 mx-2 max-w-md pointer-events-auto relative group">
-                                <input type="text" placeholder="Search" className="bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10 text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-10 pr-4 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 focus:shadow-lg text-sm" value={search} onChange={handleSearchChange} onFocus={handleSearchFocus} />
+                                <input type="text" placeholder="Search" className="bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10 text-slate-700 dark:text-slate-200 placeholder-slate-500 pl-10 pr-4 py-3 rounded-full outline-none w-full font-medium tracking-wide transition-all focus:scale-105 shadow-2xl text-sm" value={search} onChange={handleSearchChange} onFocus={handleSearchFocus} />
                                 <div className="absolute inset-y-0 left-3 flex items-center text-slate-500"><IconSearch /></div>
                                 {searchSuggestions.length > 0 && (
                                     <div className="suggestions-list" style={{top: '120%'}}>
