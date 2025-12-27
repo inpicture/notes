@@ -664,6 +664,13 @@
                 }
             }, [view, mapReady, pendingFocus, notes]);
 
+            useEffect(() => {
+                if (view === 'GLOBE' && mapRef.current) {
+                    mapRef.current.invalidateSize();
+                    setTimeout(() => mapRef.current.invalidateSize(), 1050);
+                }
+            }, [view]);
+
             const handleNotificationClick = (id) => {
                 const note = notes.find(n => n.id === id);
                 if (!note) return;
@@ -1168,7 +1175,7 @@
                         </div>
 
                         {/* GLOBE PANE (Right) */}
-                        <div className={`w-screen h-full relative transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] ${view === 'GLOBE' ? 'opacity-100 blur-none scale-100' : 'opacity-0 blur-xl scale-90'}`}>
+                        <div className={`w-screen h-full relative transition-opacity duration-500 ${view === 'GLOBE' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                             <div id="map-container" className="w-full h-full"></div>
                             <div className="globe-gradient-overlay"></div>
                         </div>
